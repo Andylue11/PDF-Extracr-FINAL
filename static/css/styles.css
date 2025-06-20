@@ -1,0 +1,233 @@
+/* 
+ * RFMS PDF XTRACR - Custom Styles
+ * Custom styles for the application beyond Tailwind CSS
+ */
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Custom focus styles */
+.custom-focus:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+/* Animated elements */
+.animated-element {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Toast notification animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Form validation styles */
+.was-validated .form-control:invalid {
+    border-color: #e53e3e;
+}
+
+.was-validated .form-control:valid {
+    border-color: #38a169;
+}
+
+.validation-message {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.invalid-feedback {
+    display: none;
+    color: #e53e3e;
+}
+
+.was-validated .form-control:invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* Custom button styles */
+.btn-primary-gradient {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-gradient:hover {
+    background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(49, 130, 206, 0.3);
+}
+
+/* Upload progress bar */
+.upload-progress {
+    width: 100%;
+    height: 4px;
+    background-color: #edf2f7;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.upload-progress-bar {
+    height: 100%;
+    background-color: #3182ce;
+    transition: width 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .mobile-stack {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .mobile-stack > * {
+        width: 100%;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 0.5rem;
+    }
+}
+
+.input-dark {
+    font-size: 0.75rem;
+}
+label {
+    font-size: 0.75rem;
+}
+.section-title {
+    font-size: 1.01rem !important;
+}
+.text-lg { font-size: 1.01rem !important; }
+.text-sm { font-size: 0.7rem !important; }
+.text-xs { font-size: 0.56rem !important; }
+.text-gray-400 { font-size: 0.66rem !important; }
+.text-atoz-yellow {
+    color: #ffe066 !important;
+}
+.gradient-green {
+    background: linear-gradient(90deg, #009966 0%, #7fffaf 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+}
+.header-text {
+    color: #7fffaf;
+    font-size: 3.7rem;
+    line-height: 110px;
+    height: 110px;
+    font-weight: 1000;
+    text-shadow: 0 1px 2px #222;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#api-status-indicator {
+    width: 9.6px !important;
+    height: 9.6px !important;
+    background: #39ff14 !important;
+    border: 1.5px solid #fff;
+}
+#description-of-works {
+    min-height: 183px !important;
+}
+#api-status-text {
+    font-size: 1.5rem !important;
+    font-weight: 1000 !important;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 2px #222;
+}
+.bg-gray-800 {
+    margin-top: 4px !important;
+}
+#add-customer-button, #create-job-button {
+    height: 42.2px !important;
+    min-width: 135px !important;
+    max-width: 135px !important;
+    font-size: 1.01rem !important;
+    padding-top: 0.345rem !important;
+    padding-bottom: 0.345rem !important;
+    padding-left: 1.2rem !important;
+    padding-right: 1.2rem !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.w-32 { width: 90px !important; }
+.w-24 { width: 70px !important; }
+.input-dark[type="number"] {
+    height: 29px !important;
+    min-height: 29px !important;
+}
+.w-28 { width: 100px !important; }
+#alternate-contact-name {
+    min-height: 133px !important;
+}
+
+/* Custom alignment for secondary PO details */
+#secondary-po-details > div {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 0;
+}
+#secondary-po-details label {
+    margin-bottom: 0 !important;
+}
+#secondary-po-details input[type="text"],
+#secondary-po-details input[type="number"] {
+    height: 29px !important;
+    min-height: 29px !important;
+}
+
+#billing-group-checkbox {
+    width: 1.1em !important;
+    height: 1.1em !important;
+}
+#billing-group-checkbox + label {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    margin-left: 0.5em !important;
+}
+#billing-group-checkbox + label + div {
+    margin-left: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 24px;
+}
+#billing-group-checkbox + label + div > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+#secondary-po-suffix, #second-po-dollar-value {
+    height: 29px !important;
+    min-height: 29px !important;
+} 

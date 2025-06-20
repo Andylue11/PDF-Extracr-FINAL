@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block title %}Preview Data - RFMS PDF XTRACR{% endblock %}
+
+{% block content %}
+<div class="mb-4 flex justify-between items-center">
+    <h2 class="text-2xl font-semibold">Preview Extracted Data</h2>
+    <div>
+        <a href="{{ url_for('index') }}" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition">Back to Dashboard</a>
+    </div>
+</div>
+
+{# --- PO Status Banner --- #}
+{% set po_status = pdf_data.extracted_data.get('po_status', '') %}
+{% set po_status_message = pdf_data.extracted_data.get('po_status_message', '') %}
+{% set status_color = 'bg-green-200 text-green-900 border-green-400' if po_status == 'new' else 'bg-yellow-200 text-yellow-900 border-yellow-400' if po_status == 'missing' else 'bg-red-200 text-red-900 border-red-400' %}
+{% if po_status_message %}
+<div class="mb-6 p-4 rounded-lg border-2 {{ status_color }} text-xl font-bold flex items-center justify-center" style="font-size:1.5rem;">
+    <span>{{ po_status_message }}</span>
+</div>
+{% endif %}
+
+<div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">PO #{{ pdf_data.po_number }}</h3>
+            <span class="px-3 py-1 rounded-full text-sm font-medium {{ 'bg-green-100 text-green-800' if pdf_data.processed else 'bg-yellow-100 text-yellow-800' }}">
+                {{ 'Processed' if pdf_data.processed else 'Pending' }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <form id="data-form" class="space-y-6">
+            <!-- Customer Information Section -->
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Sold To / Customer Information</h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="salutation" class="block text-lg font-medium text-gray-700 mb-1">Salutation</label>
+                        <select id="salutation" name="salutation" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                            <option value="" {% if not pdf_data.extracted_data.get('salutation') %}selected{% endif %}>Select</option>
+                            <option value="Mr." {% if pdf_data.extracted_data.get('salutation') == 'Mr.' %}selected{% endif %}>Mr.</option>
+                            <option value="Mrs." {% if pdf_data.extracted_data.get('salutation') == 'Mrs.' %}selected{% endif %}>Mrs.</option>
+                            <option value="Ms." {% if pdf_data.extracted_data.get('salutation') == 'Ms.' %}selected{% endif %}>Ms.</option>
+                            <option value="Dr." {% if pdf_data.extracted_data.get('salutation') == 'Dr.' %}selected{% endif %}>Dr.</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="first_name" class="block text-lg font-medium text-gray-700 mb-1">First Name</label>
+                        <input type="text" id="first_name" name="first_name" value="{{ pdf_data.extracted_data.get('first_name', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="last_name" class="block text-lg font-medium text-gray-700 mb-1">Last Name</label>
+                        <input type="text" id="last_name" name="last_name" value="{{ pdf_data.extracted_data.get('last_name', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div class="md:col-span-3">
+                        <label for="business_name" class="block text-lg font-medium text-gray-700 mb-1">Business Name</label>
+                        <input type="text" id="business_name" name="business_name" value="{{ pdf_data.extracted_data.get('business_name', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div class="md:col-span-3">
+                        <label for="address" class="block text-lg font-medium text-gray-700 mb-1">Address</label>
+                        <input type="text" id="address" name="address" value="{{ pdf_data.extracted_data.get('address', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="city" class="block text-lg font-medium text-gray-700 mb-1">City/Suburb</label>
+                        <input type="text" id="city" name="city" value="{{ pdf_data.extracted_data.get('city', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="state" class="block text-lg font-medium text-gray-700 mb-1">State</label>
+                        <input type="text" id="state" name="state" value="{{ pdf_data.extracted_data.get('state', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="zip_code" class="block text-lg font-medium text-gray-700 mb-1">ZIP Code</label>
+                        <input type="text" id="zip_code" name="zip_code" value="{{ pdf_data.extracted_data.get('zip_code', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="phone" class="block text-lg font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="text" id="phone" name="phone" value="{{ pdf_data.extracted_data.get('phone', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                        <p class="text-xs text-gray-500 mt-1">Maps to Created Job Phone1 & Phone3 of customer file</p>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="email" class="block text-lg font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="email" name="email" value="{{ pdf_data.extracted_data.get('email', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="mobile" class="block text-lg font-medium text-gray-700 mb-1">Mobile</label>
+                        <input type="text" id="mobile" name="mobile" value="{{ pdf_data.extracted_data.get('mobile', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                        <p class="text-xs text-gray-500 mt-1">Maps to Created Job Phone2 & Phone4 of customer file</p>
+                    </div>
+
+                    <div>
+                        <label for="supervisor_name" class="block text-lg font-medium text-gray-700 mb-1">Supervisor Name</label>
+                        <input type="text" id="supervisor_name" name="supervisor_name" value="{{ pdf_data.extracted_data.get('supervisor_name', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+
+                    <div>
+                        <label for="address1" class="block text-lg font-medium text-gray-700 mb-1">Address Line 1</label>
+                        <input type="text" id="address1" name="address1" value="{{ pdf_data.extracted_data.get('address1', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+
+                    <div>
+                        <label for="address2" class="block text-lg font-medium text-gray-700 mb-1">Address Line 2</label>
+                        <input type="text" id="address2" name="address2" value="{{ pdf_data.extracted_data.get('address2', '') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+
+                    <div>
+                        <label for="country" class="block text-lg font-medium text-gray-700 mb-1">Country</label>
+                        <input type="text" id="country" name="country" value="{{ pdf_data.extracted_data.get('country', 'Australia') }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Purchase Order Information Section -->
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Purchase Order Information</h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="po_number" class="block text-lg font-medium text-gray-700 mb-1">PO Number</label>
+                        <input type="text" id="po_number" name="po_number" value="{{ pdf_data.po_number }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="dollar_value" class="block text-lg font-medium text-gray-700 mb-1">Dollar Value</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" step="0.01" id="dollar_value" name="dollar_value" value="{{ pdf_data.dollar_value }}" class="w-full pl-7 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="scope_of_work" class="block text-lg font-medium text-gray-700 mb-1">Scope of Work</label>
+                        <textarea id="scope_of_work" name="scope_of_work" rows="6" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">{{ pdf_data.scope_of_work }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Billing Group Section -->
+            <div class="border-t border-gray-200 pt-4">
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="is_billing_group" name="is_billing_group" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="is_billing_group" class="ml-2 block text-sm text-gray-900">Is this PO part of a billing group?</label>
+                </div>
+                
+                <div id="billing-group-fields" class="grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
+                    <div>
+                        <label for="po_prefix" class="block text-lg font-medium text-gray-700 mb-1">PO# Prefix</label>
+                        <input type="text" id="po_prefix" name="po_prefix" value="{{ pdf_data.po_number }}" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="po_suffix" class="block text-lg font-medium text-gray-700 mb-1">2-digit Suffix</label>
+                        <input type="text" id="po_suffix" name="po_suffix" maxlength="2" placeholder="01" class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    </div>
+                    
+                    <div>
+                        <label for="second_value" class="block text-lg font-medium text-gray-700 mb-1">Second PO Value</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">$</span>
+                            </div>
+                            <input type="number" step="0.01" id="second_value" name="second_value" value="0.00" class="w-full pl-7 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-wrap gap-2">
+        <button id="confirm-data-btn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition text-lg font-bold">Confirm Data</button>
+        <button id="create-quote-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-lg font-bold">Create Quote</button>
+        <button id="create-job-btn" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition text-lg font-bold">Create Job</button>
+        <button id="upload-rfms-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition text-lg font-bold">Upload to RFMS</button>
+        <form action="{{ url_for('clear_data') }}" method="post" class="inline">
+            <button type="submit" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition text-lg font-bold">Next Upload</button>
+        </form>
+    </div>
+</div>
+
+<!-- Customer Search/Create Modal -->
+<div id="customer-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">Find or Create Customer</h3>
+            <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <label for="customer-search" class="block text-sm font-medium text-gray-700 mb-1">Search for existing customer</label>
+            <div class="flex">
+                <input type="text" id="customer-search" name="customer-search" placeholder="Search by name or CustomId" class="flex-grow px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <button id="search-customer-btn" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 transition">Search</button>
+            </div>
+        </div>
+        
+        <div id="search-results" class="mb-4 max-h-64 overflow-y-auto">
+            <!-- Search results will be displayed here -->
+            <p class="text-sm text-gray-500">Search results will appear here</p>
+        </div>
+        
+        <div class="flex justify-between">
+            <button id="create-new-customer-btn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">Create New Customer</button>
+            <button id="cancel-customer-btn" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Billing group checkbox toggle
+    const billingGroupCheckbox = document.getElementById('is_billing_group');
+    const billingGroupFields = document.getElementById('billing-group-fields');
+    
+    billingGroupCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            billingGroupFields.classList.remove('hidden');
+        } else {
+            billingGroupFields.classList.add('hidden');
+        }
+    });
+    
+    // Form data handling
+    function getFormData() {
+        const formData = new FormData(document.getElementById('data-form'));
+        return Object.fromEntries(formData.entries());
+    }
+    
+    // Customer modal handling
+    const customerModal = document.getElementById('customer-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelCustomerBtn = document.getElementById('cancel-customer-btn');
+    const searchCustomerBtn = document.getElementById('search-customer-btn');
+    const customerSearchInput = document.getElementById('customer-search');
+    const searchResults = document.getElementById('search-results');
+    const createNewCustomerBtn = document.getElementById('create-new-customer-btn');
+    
+    let selectedCustomerId = null;
+    
+    function showCustomerModal() {
+        customerModal.classList.remove('hidden');
+    }
+    
+    function hideCustomerModal() {
+        customerModal.classList.add('hidden');
+    }
+    
+    closeModalBtn.addEventListener('click', hideCustomerModal);
+    cancelCustomerBtn.addEventListener('click', hideCustomerModal);
+    
+    // Customer search
+    searchCustomerBtn.addEventListener('click', function() {
+        const searchTerm = customerSearchInput.value.trim();
+        if (searchTerm) {
+            searchResults.innerHTML = '<p class="text-sm text-gray-500">Searching...</p>';
+            
+            fetch('/api/customers/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ term: searchTerm })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        searchResults.innerHTML = `<p class="text-sm text-red-500">${data.error}</p>`;
+                        return;
+                    }
+                    
+                    if (data.length === 0) {
+                        searchResults.innerHTML = '<p class="text-sm text-gray-500">No customers found. You can create a new customer using the button below.</p>';
+                        return;
+                    }
+                    
+                    let html = '<div class="space-y-2">';
+                    data.forEach(customer => {
+                        html += `
+                            <div class="border border-gray-200 rounded-md p-3 hover:bg-gray-50 cursor-pointer customer-result" data-id="${customer.id}">
+                                <p class="font-medium">${customer.name || customer.firstName + ' ' + customer.lastName}</p>
+                                <p class="text-sm text-gray-600">${customer.address1 || ''}, ${customer.city || ''}, ${customer.state || ''}</p>
+                                <p class="text-sm text-gray-600">${customer.phone || ''} | CustomId: ${customer.customId || 'N/A'}</p>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    
+                    searchResults.innerHTML = html;
+                    
+                    // Add click event to customer results
+                    document.querySelectorAll('.customer-result').forEach(item => {
+                        item.addEventListener('click', function() {
+                            selectedCustomerId = this.dataset.id;
+                            hideCustomerModal();
+                            
+                            // Proceed with action after customer selection
+                            continueWithSelectedAction();
+                        });
+                    });
+                })
+                .catch(error => {
+                    searchResults.innerHTML = `<p class="text-sm text-red-500">Error searching customers: ${error.message}</p>`;
+                });
+        }
+    });
+    
+    // Create new customer
+    createNewCustomerBtn.addEventListener('click', function() {
+        const formData = getFormData();
+        hideCustomerModal();
+        
+        // Create customer with form data
+        fetch('/api/create_customer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error creating customer: ${data.error}`);
+                return;
+            }
+            
+            selectedCustomerId = data.id;
+            
+            // Proceed with action after customer creation
+            continueWithSelectedAction();
+        })
+        .catch(error => {
+            alert(`Error creating customer: ${error.message}`);
+        });
+    });
+    
+    // Action buttons
+    const confirmDataBtn = document.getElementById('confirm-data-btn');
+    const createQuoteBtn = document.getElementById('create-quote-btn');
+    const createJobBtn = document.getElementById('create-job-btn');
+    const uploadRfmsBtn = document.getElementById('upload-rfms-btn');
+    
+    let currentAction = null;
+    
+    confirmDataBtn.addEventListener('click', function() {
+        alert('Data confirmed! You can now create a quote or job.');
+    });
+    
+    createQuoteBtn.addEventListener('click', function() {
+        currentAction = 'quote';
+        showCustomerModal();
+    });
+    
+    createJobBtn.addEventListener('click', function() {
+        currentAction = 'job';
+        showCustomerModal();
+    });
+    
+    uploadRfmsBtn.addEventListener('click', function() {
+        alert('This feature would upload data directly to RFMS without creating a quote or job.');
+    });
+    
+    function continueWithSelectedAction() {
+        if (!selectedCustomerId) {
+            alert('No customer selected or created.');
+            return;
+        }
+        
+        const formData = getFormData();
+        formData.customer_id = selectedCustomerId;
+        
+        if (currentAction === 'quote') {
+            // Create quote
+            fetch('/api/create_quote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error creating quote: ${data.error}`);
+                    return;
+                }
+                
+                alert(`Quote created successfully! Quote ID: ${data.id}`);
+                window.location.href = '/'; // Redirect to dashboard
+            })
+            .catch(error => {
+                alert(`Error creating quote: ${error.message}`);
+            });
+        } else if (currentAction === 'job') {
+            // Create job
+            fetch('/api/create_job', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error creating job: ${data.error}`);
+                    return;
+                }
+                
+                if (formData.is_billing_group === 'on') {
+                    alert(`Jobs created and added to billing group successfully!`);
+                } else {
+                    alert(`Job created successfully! Job ID: ${data.id}`);
+                }
+                
+                window.location.href = '/'; // Redirect to dashboard
+            })
+            .catch(error => {
+                alert(`Error creating job: ${error.message}`);
+            });
+        }
+    }
+</script>
+{% endblock %} 

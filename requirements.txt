@@ -1,0 +1,32 @@
+# === WATCHER HEADER START ===
+# File: requirements.txt
+# Managed by file watcher
+# === WATCHER HEADER END ===
+
+# Core Flask Framework
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Werkzeug==2.3.7
+
+# Environment and Configuration
+python-dotenv==1.0.0
+
+# HTTP Requests for RFMS API
+requests==2.31.0
+
+# PDF Processing
+pdfplumber==0.9.0
+PyMuPDF==1.23.5
+
+# Date and Time Utilities
+python-dateutil==2.8.2
+
+# Email Utilities (if needed)
+smtplib2==0.2.1
+
+# Development and Testing
+pytest==7.4.2
+pytest-flask==1.2.0
+
+# Security
+cryptography==41.0.4
