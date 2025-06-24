@@ -10911,3 +10911,86 @@ M2
 2025-06-20 18:35:14,521 - __main__ - INFO - Successfully extracted data for Purchase_Order2.pdf
 2025-06-20 18:35:19,534 - utils.rfms_api - INFO - Order found for PO number 20178789-21: [{'documentNumber': 'AZ002910', 'customerFirst': 'C/O STEVE MURRAY', 'customerLast': 'ANEMBO AFFORDABLE HOMES PTY LTD', 'customerType': 'SUPPLY ONLY', 'createdDate': '2025-06-20T00:00:00', 'grandTotal': 2240.0, 'status': 'Open', 'balanceDue': 0.0}, {'documentNumber': 'AZ002903', 'customerFirst': '', 'customerLast': 'KESHLAND PTY LTD T/A NEXUS PROJECT GROUP', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 0.0, 'status': 'Open', 'balanceDue': 0.0}, {'documentNumber': 'AZ002907', 'customerFirst': '', 'customerLast': 'AUSTRALIAN RESTORATION AND CONSTRUCTION PTY LTD', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 3828.0, 'status': 'Job Costed', 'balanceDue': 3828.0}, {'documentNumber': 'AZ002902', 'customerFirst': 'ELIZABETH', 'customerLast': 'LOGAN', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 1851.0, 'status': 'Open', 'balanceDue': 925.5}, {'documentNumber': 'AZ002904', 'customerFirst': '', 'customerLast': 'AMBROSE CONSTRUCT GROUP PTY LTD', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 0.0, 'status': 'Open', 'balanceDue': 0.0}, {'documentNumber': 'AZ002906', 'customerFirst': '', 'customerLast': 'CONSTRUCT GROUP PTY LT**VOID**', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 0.0, 'status': 'Job Costed', 'balanceDue': 0.0}, {'documentNumber': 'AZ002908', 'customerFirst': '', 'customerLast': 'CONSTRUCT GROUP PTY LT**VOID**', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 0.0, 'status': 'Job Costed', 'balanceDue': 0.0}, {'documentNumber': 'AZ002909', 'customerFirst': 'AMBROSE', 'customerLast': 'CONSTRUCT GROUP PTY LTD', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 0.0, 'status': 'Open', 'balanceDue': 0.0}, {'documentNumber': 'AZ002905', 'customerFirst': '', 'customerLast': 'AMBROSE CONSTRUCT GROUP PTY LTD', 'customerType': 'BUILDERS', 'createdDate': '2025-06-19T00:00:00', 'grandTotal': 0.0, 'status': 'Open', 'balanceDue': 0.0}, {'documentNumber': 'AZ002901', 'customerFirst': 'ZARRAFFA’S COFFEE', 'customerLast': 'CRAFTED SPACES', 'customerType': 'COMMERCIAL', 'createdDate': '2025-06-18T00:00:00', 'grandTotal': 7427.0, 'status': 'Open', 'balanceDue': 7427.0}]
 2025-06-20 18:35:19,534 - werkzeug - INFO - 127.0.0.1 - - [20/Jun/2025 18:35:19] "POST /upload-pdf HTTP/1.1" 200 -
+2025-06-24 14:50:19,391 - __main__ - INFO - RFMS PDF Xtracr - Comprehensive Format Enabled
+2025-06-24 14:50:19,391 - __main__ - INFO - Using AZ002876 successful structure + comprehensive lines
+2025-06-24 14:50:19,392 - __main__ - INFO - RFMS API Configuration:
+2025-06-24 14:50:19,392 - __main__ - INFO -   Base URL: https://api.rfms.online
+2025-06-24 14:50:19,392 - __main__ - INFO -   Store Code: Loaded
+2025-06-24 14:50:19,392 - __main__ - INFO -   Username: Loaded
+2025-06-24 14:50:19,392 - __main__ - INFO -   API Key: Loaded
+2025-06-24 14:50:19,392 - __main__ - INFO - RFMS API client initialized successfully with comprehensive format support
+2025-06-24 14:50:19,405 - __main__ - INFO - Starting application in debug mode on port 5000
+2025-06-24 14:50:19,524 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.35:5000
+2025-06-24 14:50:19,525 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-06-24 14:50:19,533 - werkzeug - INFO -  * Restarting with stat
+2025-06-24 14:50:20,304 - __main__ - INFO - RFMS PDF Xtracr - Comprehensive Format Enabled
+2025-06-24 14:50:20,304 - __main__ - INFO - Using AZ002876 successful structure + comprehensive lines
+2025-06-24 14:50:20,304 - __main__ - INFO - RFMS API Configuration:
+2025-06-24 14:50:20,305 - __main__ - INFO -   Base URL: https://api.rfms.online
+2025-06-24 14:50:20,305 - __main__ - INFO -   Store Code: Loaded
+2025-06-24 14:50:20,305 - __main__ - INFO -   Username: Loaded
+2025-06-24 14:50:20,305 - __main__ - INFO -   API Key: Loaded
+2025-06-24 14:50:20,305 - __main__ - INFO - RFMS API client initialized successfully with comprehensive format support
+2025-06-24 14:50:20,308 - __main__ - INFO - Starting application in debug mode on port 5000
+2025-06-24 14:50:20,322 - werkzeug - WARNING -  * Debugger is active!
+2025-06-24 14:50:20,330 - werkzeug - INFO -  * Debugger PIN: 125-022-026
+2025-06-24 14:50:21,355 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:21] "GET / HTTP/1.1" 200 -
+2025-06-24 14:50:21,859 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:21] "[36mGET /static/customcolor_logo_transparent_background.jpeg HTTP/1.1[0m" 304 -
+2025-06-24 14:50:21,988 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:21] "[36mGET /static/css/styles.css HTTP/1.1[0m" 304 -
+2025-06-24 14:50:22,105 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:22] "[36mGET /static/js/main.js HTTP/1.1[0m" 304 -
+2025-06-24 14:50:23,383 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:23] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-06-24 14:50:24,834 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:24] "GET /api/check_status HTTP/1.1" 200 -
+2025-06-24 14:50:30,274 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:50:30] "GET / HTTP/1.1" 200 -
+2025-06-24 14:51:39,553 - __main__ - INFO - Searching for customers with term: REZTOR, start_index: 0
+2025-06-24 14:51:39,558 - utils.rfms_api - INFO - [TIMER] find_customer_by_name started
+2025-06-24 14:51:39,558 - utils.rfms_api - INFO - [CACHE] Miss for (REZTOR, 0)
+2025-06-24 14:51:39,560 - utils.rfms_api - INFO - [SESSION] Session token missing or expired. Previous token: rfmsapi-e531fc7c5f6b42f79730501ab29b04a6, expiry: 2025-06-20 08:50:06, now: 2025-06-24 04:51:39.558854. Triggering handshake.
+2025-06-24 14:51:39,561 - utils.rfms_api - INFO - Attempting to begin session at https://api.rfms.online/v2/Session/Begin with store code store-5291f4e3dca04334afede9f642ec6157
+2025-06-24 14:51:40,779 - __main__ - INFO - Searching for customers with term: REZTOR, start_index: 0
+2025-06-24 14:51:40,781 - utils.rfms_api - INFO - [TIMER] find_customer_by_name started
+2025-06-24 14:51:40,781 - utils.rfms_api - INFO - [CACHE] Miss for (REZTOR, 0)
+2025-06-24 14:51:40,782 - utils.rfms_api - INFO - [SESSION] Session token missing or expired. Previous token: rfmsapi-e531fc7c5f6b42f79730501ab29b04a6, expiry: 2025-06-20 08:50:06, now: 2025-06-24 04:51:40.781934. Triggering handshake.
+2025-06-24 14:51:40,782 - utils.rfms_api - INFO - Attempting to begin session at https://api.rfms.online/v2/Session/Begin with store code store-5291f4e3dca04334afede9f642ec6157
+2025-06-24 14:51:40,870 - utils.rfms_api - INFO - RFMS API response status: 200
+2025-06-24 14:51:40,884 - utils.rfms_api - INFO - Successfully obtained RFMS API session token: rfmsapi-fe91aac376db48f29f8ce09b4b132093, expires at: 2025-06-24 05:06:40
+2025-06-24 14:51:40,900 - utils.rfms_api - INFO - [RFMS API] POST https://api.rfms.online/v2/customers/find | Payload: {'searchText': 'REZTOR', 'includeCustomers': True, 'includeInactive': True, 'storeNumber': '1'}
+2025-06-24 14:51:40,901 - utils.rfms_api - INFO - [SESSION] Reusing existing session token: rfmsapi-fe91aac376db48f29f8ce09b4b132093, expiry: 2025-06-24 05:06:40 (UTC), now: 2025-06-24 04:51:40.901338 (UTC)
+2025-06-24 14:51:41,979 - utils.rfms_api - INFO - RFMS API response status: 200
+2025-06-24 14:51:41,980 - utils.rfms_api - INFO - Successfully obtained RFMS API session token: rfmsapi-f03662a17a73478c8a706057977b7d4b, expires at: 2025-06-24 05:06:41
+2025-06-24 14:51:41,991 - utils.rfms_api - INFO - [RFMS API] POST https://api.rfms.online/v2/customers/find | Payload: {'searchText': 'REZTOR', 'includeCustomers': True, 'includeInactive': True, 'storeNumber': '1'}
+2025-06-24 14:51:41,993 - utils.rfms_api - INFO - [SESSION] Reusing existing session token: rfmsapi-f03662a17a73478c8a706057977b7d4b, expiry: 2025-06-24 05:06:41 (UTC), now: 2025-06-24 04:51:41.992397 (UTC)
+2025-06-24 14:51:43,702 - utils.rfms_api - INFO - [CACHE] Hit for (REZTOR, 0)
+2025-06-24 14:51:43,703 - utils.rfms_api - INFO - [TIMER] find_customer_by_name total duration: 4.14s
+2025-06-24 14:51:43,704 - utils.rfms_api - INFO - [TIMER] _format_customer_list started
+2025-06-24 14:51:43,704 - utils.rfms_api - INFO - [TIMER] _format_customer_list duration: 0.00s for 0 customers
+2025-06-24 14:51:43,705 - __main__ - INFO - No customers found for search term: REZTOR
+2025-06-24 14:51:43,706 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:51:43] "POST /api/customers/search HTTP/1.1" 200 -
+2025-06-24 14:51:43,933 - utils.rfms_api - INFO - [CACHE] Hit for (REZTOR, 0)
+2025-06-24 14:51:43,934 - utils.rfms_api - INFO - [TIMER] find_customer_by_name total duration: 3.16s
+2025-06-24 14:51:43,934 - utils.rfms_api - INFO - [TIMER] _format_customer_list started
+2025-06-24 14:51:43,934 - utils.rfms_api - INFO - [TIMER] _format_customer_list duration: 0.00s for 0 customers
+2025-06-24 14:51:43,934 - __main__ - INFO - No customers found for search term: REZTOR
+2025-06-24 14:51:43,935 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:51:43] "POST /api/customers/search HTTP/1.1" 200 -
+2025-06-24 14:52:18,574 - __main__ - INFO - Searching for customers with term: REZTOR, start_index: 0
+2025-06-24 14:52:18,575 - utils.rfms_api - INFO - [TIMER] find_customer_by_name started
+2025-06-24 14:52:18,576 - utils.rfms_api - INFO - [CACHE] Hit for (REZTOR, 0)
+2025-06-24 14:52:18,576 - utils.rfms_api - INFO - [TIMER] find_customer_by_name total duration: 0.00s
+2025-06-24 14:52:18,576 - utils.rfms_api - INFO - [TIMER] _format_customer_list started
+2025-06-24 14:52:18,576 - utils.rfms_api - INFO - [TIMER] _format_customer_list duration: 0.00s for 0 customers
+2025-06-24 14:52:18,577 - __main__ - INFO - No customers found for search term: REZTOR
+2025-06-24 14:52:18,578 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:52:18] "POST /api/customers/search HTTP/1.1" 200 -
+2025-06-24 14:56:09,859 - __main__ - ERROR - Error creating customer: Customer first name and last name are required.
+2025-06-24 14:56:09,861 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:56:09] "[35m[1mPOST /api/create_customer HTTP/1.1[0m" 500 -
+2025-06-24 14:56:10,870 - __main__ - ERROR - Error creating customer: Customer first name and last name are required.
+2025-06-24 14:56:10,871 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:56:10] "[35m[1mPOST /api/create_customer HTTP/1.1[0m" 500 -
+2025-06-24 14:56:12,197 - __main__ - ERROR - Error creating customer: Customer first name and last name are required.
+2025-06-24 14:56:12,198 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:56:12] "[35m[1mPOST /api/create_customer HTTP/1.1[0m" 500 -
+2025-06-24 14:56:39,022 - __main__ - ERROR - Error creating customer: Customer first name and last name are required.
+2025-06-24 14:56:39,023 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:56:39] "[35m[1mPOST /api/create_customer HTTP/1.1[0m" 500 -
+2025-06-24 14:56:40,333 - __main__ - ERROR - Error creating customer: Customer first name and last name are required.
+2025-06-24 14:56:40,333 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:56:40] "[35m[1mPOST /api/create_customer HTTP/1.1[0m" 500 -
+2025-06-24 14:56:41,351 - __main__ - ERROR - Error creating customer: Customer first name and last name are required.
+2025-06-24 14:56:41,352 - werkzeug - INFO - 127.0.0.1 - - [24/Jun/2025 14:56:41] "[35m[1mPOST /api/create_customer HTTP/1.1[0m" 500 -
