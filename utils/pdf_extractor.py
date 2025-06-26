@@ -300,6 +300,7 @@ class BuilderType(Enum):
     AUSTRALIAN_RESTORATION = "Australian Restoration Company"
     TOWNSEND = "Townsend Building Services"
     ONE_SOLUTIONS = "One Solutions"
+    ADVANCE = "Advance Builders"
     UNKNOWN = "Unknown"
 
 @dataclass
@@ -666,11 +667,11 @@ def detect_template(text: str, builder_name: str = "") -> Dict[str, Any]:
                 r"PO[:\s#]+(P?\d+)",
             ],
             "customer_patterns": [
-                r"Client\s*/\s*Site\s+Details.*?\n(?:[^\n]+\n){3,6}([A-Z][A-Za-z\s]+?)(?=\n)",  # Skip lines to get to actual name
-                r"Client\s*/\s*Site\s+Details[:\s]*\n?([A-Za-z\s]+?)(?=\n\d+|\n[A-Za-z]+\s+[A-Za-z]+,)",  # Name is first line in grid box
-                r"Client\s*/\s*Site\s+Details[:\s]*\n?([A-Za-z\s]+?)(?=\n|\()",
-                r"Customer[:\s]+([A-Za-z\s]+?)(?=\n)",
-                r"Site\s+Details[:\s]*\n?([A-Za-z\s]+?)(?=\n)",
+                r"Client\s*/\s*Site\s+Details.*?\n(?:[^\n]+\n){3,6}([A-Z][A-Za-z\s\-'\.]+?)(?=\n)",  # Skip lines to get to actual name - includes hyphens, apostrophes, periods
+                r"Client\s*/\s*Site\s+Details[:\s]*\n?([A-Za-z\s\-'\.]+?)(?=\n\d+|\n[A-Za-z]+\s+[A-Za-z]+,)",  # Name is first line in grid box
+                r"Client\s*/\s*Site\s+Details[:\s]*\n?([A-Za-z\s\-'\.]+?)(?=\n|\()",
+                r"Customer[:\s]+([A-Za-z\s\-'\.]+?)(?=\n)",
+                r"Site\s+Details[:\s]*\n?([A-Za-z\s\-'\.]+?)(?=\n)",
             ],
             "description_patterns": [
                 r"SCOPE\s+OF\s+WORKS[:\s]*\n([\s\S]+?)(?=Net Order|PURCHASE\s+ORDER\s+CONDITIONS|Total|$)",
@@ -692,7 +693,7 @@ def detect_template(text: str, builder_name: str = "") -> Dict[str, Any]:
             ],
             "customer_patterns": [
                 r"Customer\s+Details[:\s]*\n?([A-Za-z\s]+?)(?=\n|Site)",
-                r"Customer\s+Details[:\s]*([A-Za-z\s]+)",  # Without lookahead
+                r"Customer\s+Details[:\s]*([A-Za-z\s]+)",  # Without lookahead - includes hyphens, apostrophes, periods
                 r"Customer[:\s]+([A-Za-z\s]+?)(?=\n)",
                 r"Client[:\s]+([A-Za-z\s]+?)(?=\n)",
             ],
@@ -719,12 +720,12 @@ def detect_template(text: str, builder_name: str = "") -> Dict[str, Any]:
                 r"Work\s+Order[:\s#]+(\d+)",
             ],
             "customer_patterns": [
-                r"Site\s+Contact\s+Name\s*\n([A-Za-z\s\(\)]+?)(?=\n)",  # Based on actual text
-                r"Site\s+Contact\s+name\s*=?\s*([A-Za-z\s]+?)(?=\n|Subtotal)",  # Based on key info
-                r"Contact\s+Name\s*\n\s*([A-Za-z\s]+?)(?=\n)",  # Matches "Contact Name\nJOHN SURNAME"
-                r"Attention[:\s]+([A-Za-z\s]+?)(?=\n|Email)",
-                r"Customer[:\s]+([A-Za-z\s]+?)(?=\n)",
-                r"Client[:\s]+([A-Za-z\s]+?)(?=\n)",
+                r"Site\s+Contact\s+Name\s*\n([A-Za-z\s\(\)\-'\.]+?)(?=\n)",  # Based on actual text - includes hyphens, apostrophes, periods, parentheses
+                r"Site\s+Contact\s+name\s*=?\s*([A-Za-z\s\-'\.]+?)(?=\n|Subtotal)",  # Based on key info
+                r"Contact\s+Name\s*\n\s*([A-Za-z\s\-'\.]+?)(?=\n)",  # Matches "Contact Name\nJOHN SURNAME"
+                r"Attention[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|Email)",
+                r"Customer[:\s]+([A-Za-z\s\-'\.]+?)(?=\n)",
+                r"Client[:\s]+([A-Za-z\s\-'\.]+?)(?=\n)",
             ],
             "description_patterns": [
                 r"(?:Flooring|Floor\s+Preperation)[^<]*?([\s\S]+?)(?=Total|$)",  # Based on key info
@@ -739,6 +740,46 @@ def detect_template(text: str, builder_name: str = "") -> Dict[str, Any]:
                 r"Subtotal\s*=?\s*\$?\s*([\d,]+\.?\d*)",  # Based on key info: "Subtotal = Dollar value"
                 r"Total\s+Inc\.?\s+GST[:\s]*\$?\s*([\d,]+\.?\d*)",
                 r"Total[:\s]+\$?\s*([\d,]+\.?\d*)",
+                r"\$\s*([\d,]+\.?\d*)",
+            ],
+        },
+        "advance": {
+            "name": "Advance Builders",
+            "po_patterns": [
+                r"Purchase\s+Order[:\s#]*([A-Z0-9\-]+)",
+                r"PO[:\s#]*([A-Z0-9\-]+)",
+                r"Order\s+Number[:\s#]*([A-Z0-9\-]+)",
+                r"Work\s+Order[:\s#]*([A-Z0-9\-]+)",
+                r"Job\s+Number[:\s#]*([A-Z0-9\-]+)",
+                r"Contract[:\s#]*([A-Z0-9\-]+)",
+                r"([A-Z]{2,3}\d{4,})",  # Generic pattern for codes like ABC1234
+            ],
+            "customer_patterns": [
+                r"Customer[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Client[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Site\s+Contact[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Homeowner[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Owner[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Name[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Bill\s+To[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+                r"Ship\s+To[:\s]+([A-Za-z\s\-'\.]+?)(?=\n|$)",
+            ],
+            "description_patterns": [
+                r"Description[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+                r"Scope\s+of\s+Works?[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+                r"Work\s+Description[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+                r"Job\s+Description[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+                r"Details[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+                r"Works[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+                r"Notes[:\s]*\n?([\s\S]+?)(?=Total|Subtotal|Amount|$)",
+            ],
+            "supervisor_section_pattern": r"Supervisor[:\s]|Project\s+Manager[:\s]|Site\s+Manager[:\s]|Foreman[:\s]",
+            "dollar_patterns": [
+                r"Total[:\s]*\$?\s*([\d,]+\.?\d*)",
+                r"Subtotal[:\s]*\$?\s*([\d,]+\.?\d*)",
+                r"Amount[:\s]*\$?\s*([\d,]+\.?\d*)",
+                r"Cost[:\s]*\$?\s*([\d,]+\.?\d*)",
+                r"Price[:\s]*\$?\s*([\d,]+\.?\d*)",
                 r"\$\s*([\d,]+\.?\d*)",
             ],
         },
@@ -817,6 +858,11 @@ def detect_template(text: str, builder_name: str = "") -> Dict[str, Any]:
     if re.search(r"johns\s+lyng", text, re.IGNORECASE):
         logger.info("Detected Johns Lyng Group template")
         return builder_patterns["johns_lyng"]
+    
+    # Advance Builders detection
+    if re.search(r"advance\s+builders?", text, re.IGNORECASE):
+        logger.info("Detected Advance Builders template")
+        return builder_patterns["advance"]
     
     # Default to generic template
     logger.info("Using generic template")
@@ -1780,14 +1826,6 @@ def parse_extracted_text(text, extracted_data, template):
                         extracted_data["alternate_contact_name"] = name
                         extracted_data["alternate_contact_phone"] = phone
                         extracted_data["alternate_contact_email"] = email
-                        extracted_data["alternate_contacts"].append(
-                            {
-                                "type": "Decision Maker",
-                                "name": name,
-                                "phone": phone,
-                                "email": email,
-                            }
-                        )
                 # Fallback to previous logic for other alternates
                 name_match = re.search(
                     r"Name:?[ \t]*([A-Za-z\s\-'\.]+?)(?=\n|$)", contact_text, re.IGNORECASE
@@ -2274,6 +2312,60 @@ def parse_extracted_text(text, extracted_data, template):
                     logger.info(f"Found site/ship to address: {address}")
                     break
 
+    # Extract dates - try multiple patterns for flexibility as fallback for all builders
+    commencement_empty = not extracted_data.get("commencement_date") or extracted_data.get("commencement_date").strip() == ""
+    installation_empty = not extracted_data.get("installation_date") or extracted_data.get("installation_date").strip() == ""
+    
+    if commencement_empty or installation_empty:
+        # Attendance scheduled pattern (works for Profile Build and others)
+        attendance_patterns = [
+            r"ATTENDANCE\s+SCHEDULED\s+FOR:?\s*(\d{1,2}/\d{1,2}/\d{4})\s*to\s*(\d{1,2}/\d{1,2}/\d{4})",
+            r"Attendance\s+Scheduled\s+for:?\s*(\d{1,2}/\d{1,2}/\d{4})\s*to\s*(\d{1,2}/\d{1,2}/\d{4})",
+            r"attendance\s+scheduled\s+for:?\s*(\d{1,2}/\d{1,2}/\d{4})\s*to\s*(\d{1,2}/\d{1,2}/\d{4})",
+            r"ATTENDANCE\s+SCHEDULED\s+FOR:?\s*(\d{1,2}/\d{1,2}/\d{4})\s*-\s*(\d{1,2}/\d{1,2}/\d{4})",
+            r"Attendance\s+Scheduled\s+for:?\s*(\d{1,2}/\d{1,2}/\d{4})\s*-\s*(\d{1,2}/\d{1,2}/\d{4})",
+        ]
+        
+        for pattern in attendance_patterns:
+            attendance_match = re.search(pattern, text, re.IGNORECASE)
+            if attendance_match:
+                if commencement_empty:
+                    extracted_data["commencement_date"] = attendance_match.group(1).strip()
+                    logger.info(f"[ATTENDANCE] Found commencement date: {extracted_data['commencement_date']}")
+                if installation_empty:
+                    extracted_data["installation_date"] = attendance_match.group(2).strip()
+                    logger.info(f"[ATTENDANCE] Found installation date: {extracted_data['installation_date']}")
+                logger.info(f"[ATTENDANCE] Found attendance dates: {extracted_data['commencement_date']} to {extracted_data['installation_date']}")
+                break
+        
+        # Other date patterns as fallbacks
+        if not extracted_data.get("commencement_date") or extracted_data.get("commencement_date").strip() == "":
+            commencement_patterns = [
+                r"Commencement\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+                r"Start\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+                r"Begin\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+            ]
+            for pattern in commencement_patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    extracted_data["commencement_date"] = match.group(1).strip()
+                    logger.info(f"[DATE] Found commencement date: {extracted_data['commencement_date']}")
+                    break
+        
+        if not extracted_data.get("installation_date") or extracted_data.get("installation_date").strip() == "":
+            completion_patterns = [
+                r"Completion\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+                r"End\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+                r"Finish\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+                r"Installation\s+Date:?\s*(\d{1,2}/\d{1,2}/\d{4})",
+            ]
+            for pattern in completion_patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    extracted_data["installation_date"] = match.group(1).strip()
+                    logger.info(f"[DATE] Found installation/completion date: {extracted_data['installation_date']}")
+                    break
+
     # After extracting supervisor name/phone
     logger.info(f"[EXTRACT] Supervisor Name: {extracted_data['supervisor_name']}")
     logger.info(f"[EXTRACT] Supervisor Phone: {extracted_data['supervisor_mobile']}")
@@ -2283,6 +2375,8 @@ def parse_extracted_text(text, extracted_data, template):
     )
     # After extracting email
     logger.info(f"[EXTRACT] Email: {extracted_data['email']}")
+    # After extracting dates
+    logger.info(f"[EXTRACT] Commencement Date: {extracted_data['commencement_date']}, Installation Date: {extracted_data['installation_date']}")
     # After extracting all phone numbers
     logger.info(
         f"[EXTRACT] Phone: {extracted_data['phone']}, Mobile: {extracted_data['mobile']}, Home: {extracted_data['home_phone']}, Work: {extracted_data['work_phone']}, Extra: {extracted_data['extra_phones']}"
@@ -2344,18 +2438,51 @@ def extract_contact_details(text, extracted_data):
     all_matches = re.finditer(phone_pattern, text)
 
     # Company phone numbers to exclude
-    company_phone_numbers = ["0731100077", "35131176", "999869951"]
+    company_phone_numbers = [
+        "0731100077",      # A to Z Flooring Solutions
+        "35131176",        # Company number
+        "999869951",       # Other company number
+        "0736380304",      # Profile Build Group office phone (07 3638 0304)
+        "74658650821",     # ABN number
+    ]
+
+    # Profile Build Group specific patterns to exclude
+    profile_build_exclusion_patterns = [
+        r"2/133\s+REDLAND\s+BAY\s+RD.*?([0-9\s\-\(\)]+)",  # Company address area phone numbers
+        r"T:\s*([0-9\s\-\(\)]+)",  # Phone numbers after "T:" (company phone format)
+        r"E:\s*\w+@profilebuildgroup\.com\.au.*?([0-9\s\-\(\)]+)",  # Phone numbers near company email
+        r"Profile\s+Build\s+Group.*?([0-9\s\-\(\)]+)",  # Phone numbers in company header
+        r"ABN:\s*[\d\s]+.*?([0-9\s\-\(\)]+)",  # Phone numbers near ABN
+        r"QBCC.*?([0-9\s\-\(\)]+)",  # Phone numbers near QBCC license
+    ]
+
     excluded_number_patterns = [
         r"ABN:\s*(\d+)",  # ABN pattern
         r"Job\s+Number:?\s*([0-9-]+)",  # Job number pattern
+        r"QBCC\s+License:?\s*([0-9-]+)",  # QBCC license pattern
     ]
 
-    # Extract numbers to exclude
+    # Extract numbers to exclude from ABN and other patterns
     numbers_to_exclude = []
     for pattern in excluded_number_patterns:
-        match = re.search(pattern, text)
+        match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            numbers_to_exclude.append(match.group(1))
+            # Extract all digit sequences from the match
+            digits = "".join(c for c in match.group(1) if c.isdigit())
+            if digits and len(digits) >= 8:  # Only exclude if it looks like a phone number
+                numbers_to_exclude.append(digits)
+
+    # Extract Profile Build specific exclusions
+    if "profile build" in text.lower() or "profilebuildgroup" in text.lower():
+        for pattern in profile_build_exclusion_patterns:
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for match in matches:
+                # Extract phone numbers from the matched text
+                phone_matches = re.finditer(r"([0-9\s\-\(\)]{8,})", match.group(0))
+                for phone_match in phone_matches:
+                    clean_phone = "".join(c for c in phone_match.group(1) if c.isdigit())
+                    if 8 <= len(clean_phone) <= 12:
+                        company_phone_numbers.append(clean_phone)
 
     for match in all_matches:
         phone = match.group(0).strip()
@@ -2374,6 +2501,33 @@ def extract_contact_details(text, extracted_data):
             for num in company_phone_numbers + numbers_to_exclude
         ):
             continue
+
+        # Additional Profile Build specific exclusions - check context around the phone number
+        if "profile build" in text.lower() or "profilebuildgroup" in text.lower():
+            # Find the context around this phone number in the original text
+            phone_position = text.find(phone)
+            if phone_position != -1:
+                # Get 100 characters before and after the phone number for context
+                context_start = max(0, phone_position - 100)
+                context_end = min(len(text), phone_position + len(phone) + 100)
+                context = text[context_start:context_end].lower()
+                
+                # Skip if phone appears in company/builder context
+                profile_build_context_keywords = [
+                    "profile build group",
+                    "2/133 redland bay rd",
+                    "capalaba qld 4157",
+                    "t:",  # Company phone format
+                    "abn:",
+                    "qbcc",
+                    "supervisor:",
+                    "profilebuildgroup.com.au",
+                    "to: a to z flooring"
+                ]
+                
+                if any(keyword in context for keyword in profile_build_context_keywords):
+                    logger.info(f"[PROFILE BUILD] Excluding phone {phone} - found in company context: {context[:50]}...")
+                    continue
 
         # Only add if it's not already one of our main numbers and looks like a valid phone
         if len(clean_phone) >= 8 and clean_phone not in [
@@ -2843,7 +2997,8 @@ def match_builder_to_template(builder_name: str) -> str:
         "australian_restoration": ["australian restoration", "arc", "restoration company"],
         "townsend": ["townsend", "townsend building", "tbs", "townsend services"],
         "one_solutions": ["one solutions", "a to z flooring", "a to z flooring solutions"],
-        "johns_lyng": ["johns lyng", "johns lyng group", "jl group"]
+        "johns_lyng": ["johns lyng", "johns lyng group", "jl group"],
+        "advance": ["advance", "advance builders", "advance building", "advance construction"]
     }
     
     # First try exact substring matches
@@ -2899,7 +3054,8 @@ def detect_builder_from_pdf(text: str) -> str:
         'townsend building services': ['townsend building', 'townsend', 'tbs'],
         'rizon group': ['rizon', 'rizon group', 'rizon construction'],
         'one solutions': ['one solutions', 'a to z flooring', 'a to z flooring solutions'],
-        'johns lyng group': ['johns lyng', 'johns lyng group', 'jl group']
+        'johns lyng group': ['johns lyng', 'johns lyng group', 'jl group'],
+        'advance builders': ['advance builders', 'advance building', 'advance construction', 'advance']
     }
     
     for builder_name, patterns in builder_patterns.items():

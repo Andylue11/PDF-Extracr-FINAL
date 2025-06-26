@@ -329,6 +329,44 @@ function formatPhoneNumber(phoneNumberString) {
 }
 
 /**
+ * Convert date from DD/MM/YYYY format to YYYY-MM-DD format for HTML date inputs
+ * @param {string} dateStr - Date string in DD/MM/YYYY format
+ * @returns {string|null} - Date string in YYYY-MM-DD format or null if invalid
+ */
+function convertDateFormat(dateStr) {
+    if (!dateStr || typeof dateStr !== 'string') {
+        return null;
+    }
+    
+    // Handle DD/MM/YYYY format (common in PDF extraction)
+    const ddmmyyyy = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (ddmmyyyy) {
+        const day = ddmmyyyy[1].padStart(2, '0');
+        const month = ddmmyyyy[2].padStart(2, '0');
+        const year = ddmmyyyy[3];
+        return `${year}-${month}-${day}`;
+    }
+    
+    // Handle YYYY-MM-DD format (already correct)
+    const yyyymmdd = dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
+    if (yyyymmdd) {
+        return dateStr;
+    }
+    
+    // Handle other common formats
+    try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString().split('T')[0];
+        }
+    } catch (e) {
+        console.warn(`[DATE] Could not parse date: ${dateStr}`);
+    }
+    
+    return null;
+}
+
+/**
  * Helper function to safely set value to an element by ID
  * @param {string} elementId - The ID of the element
  * @param {string} value - The value to set
@@ -567,12 +605,20 @@ function setupPdfUpload() {
                     setValue('supervisor-name', extractedData.supervisor_name || '');
                     setValue('supervisor-phone', extractedData.supervisor_mobile || extractedData.supervisor_phone || '');
                 
-                // Populate dates if available
+                // Populate dates if available - convert from DD/MM/YYYY to YYYY-MM-DD format
                 if (extractedData.commencement_date) {
-                    setValue('commencement-date', extractedData.commencement_date);
+                    const commencementDate = convertDateFormat(extractedData.commencement_date);
+                    if (commencementDate) {
+                        setValue('commencement-date', commencementDate);
+                        console.log(`[DATE] Set commencement date: ${extractedData.commencement_date} -> ${commencementDate}`);
+                    }
                 }
                 if (extractedData.installation_date || extractedData.completion_date) {
-                    setValue('completion-date', extractedData.installation_date || extractedData.completion_date);
+                    const completionDate = convertDateFormat(extractedData.installation_date || extractedData.completion_date);
+                    if (completionDate) {
+                        setValue('completion-date', completionDate);
+                        console.log(`[DATE] Set completion date: ${extractedData.installation_date || extractedData.completion_date} -> ${completionDate}`);
+                    }
                 }
                 
                 // Handle best contacts if available - populate the alternate contact name field
