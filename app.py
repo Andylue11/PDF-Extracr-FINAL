@@ -189,6 +189,57 @@ def upload_pdf_api():
             extracted_data["po_status"] = po_status
             extracted_data["po_status_message"] = po_message
 
+            # Enhanced UI mapping for phone fields and BEST CONTACT
+            logger.info(f"[UI_MAPPING] Starting UI field mapping...")
+            logger.info(f"[UI_MAPPING] Available data - pdf_phone3: '{extracted_data.get('pdf_phone3', '')}', pdf_phone4: '{extracted_data.get('pdf_phone4', '')}', alternate_contacts: {len(extracted_data.get('alternate_contacts', []))}")
+            
+            # Map PDF extracted phones to UI fields for display and editing
+            if extracted_data.get("pdf_phone3") and not extracted_data.get("phone3"):
+                extracted_data["phone3"] = extracted_data["pdf_phone3"]
+                logger.info(f"[UI_MAPPING] Mapped pdf_phone3 '{extracted_data['pdf_phone3']}' to phone3 field for UI display")
+            
+            if extracted_data.get("pdf_phone4") and not extracted_data.get("phone4"):
+                extracted_data["phone4"] = extracted_data["pdf_phone4"]
+                logger.info(f"[UI_MAPPING] Mapped pdf_phone4 '{extracted_data['pdf_phone4']}' to phone4 field for UI display")
+            
+            # Build consolidated BEST CONTACT field from alternate_contacts
+            alt_contacts = extracted_data.get("alternate_contacts", [])
+            if alt_contacts:
+                best_contact_lines = []
+                available_phones = []
+                
+                # Build contact summary text and collect all phones
+                for contact in alt_contacts:
+                    if contact.get("name") and contact.get("name").strip():
+                        contact_line = f"{contact.get('type', 'Contact')}: {contact.get('name')}"
+                        if contact.get("phone"):
+                            contact_line += f" ({contact.get('phone')})"
+                            if contact.get("phone") not in available_phones:
+                                available_phones.append(contact.get("phone"))
+                        if contact.get("phone2"):
+                            contact_line += f", {contact.get('phone2')}"
+                            if contact.get("phone2") not in available_phones:
+                                available_phones.append(contact.get("phone2"))
+                        if contact.get("email"):
+                            contact_line += f" - {contact.get('email')}"
+                        best_contact_lines.append(contact_line)
+                
+                # Set BEST CONTACT field
+                if best_contact_lines:
+                    extracted_data["best_contact_summary"] = "; ".join(best_contact_lines)
+                    logger.info(f"[UI_MAPPING] Created best_contact_summary: '{extracted_data['best_contact_summary'][:100]}...'")
+                
+                # Ensure phone3 and phone4 are set from available phones if not already set
+                if not extracted_data.get("phone3") and available_phones:
+                    extracted_data["phone3"] = available_phones[0]
+                    logger.info(f"[UI_MAPPING] Set phone3 from alternate_contacts: '{available_phones[0]}'")
+                
+                if not extracted_data.get("phone4") and len(available_phones) > 1:
+                    extracted_data["phone4"] = available_phones[1] 
+                    logger.info(f"[UI_MAPPING] Set phone4 from alternate_contacts: '{available_phones[1]}'")
+            
+            logger.info(f"[UI_MAPPING] Final UI fields - phone3: '{extracted_data.get('phone3', '')}', phone4: '{extracted_data.get('phone4', '')}', best_contact_summary: '{extracted_data.get('best_contact_summary', '')[:50]}...'")
+
             return jsonify(extracted_data), 200
         except Exception as e:
             logger.error(f"Error extracting data from PDF {filename}: {str(e)}")
@@ -248,6 +299,16 @@ def upload_file():
             # Add PO status info to response and DB
             extracted_data["po_status"] = po_status
             extracted_data["po_status_message"] = po_message
+
+            # Map PDF extracted phones to UI fields for display and editing
+            # This ensures the alternate contact phones appear in the Phone 3 and Phone 4 fields
+            if extracted_data.get("pdf_phone3") and not extracted_data.get("phone3"):
+                extracted_data["phone3"] = extracted_data["pdf_phone3"]
+                logger.info(f"[UI_MAPPING] Mapped pdf_phone3 '{extracted_data['pdf_phone3']}' to phone3 field for UI display")
+            
+            if extracted_data.get("pdf_phone4") and not extracted_data.get("phone4"):
+                extracted_data["phone4"] = extracted_data["pdf_phone4"]
+                logger.info(f"[UI_MAPPING] Mapped pdf_phone4 '{extracted_data['pdf_phone4']}' to phone4 field for UI display")
 
             pdf_data_entry = PdfData(
                 filename=filename,
@@ -445,7 +506,7 @@ def export_to_rfms_api():
             pdf_entry = PdfData.query.get(pdf_id)
             if pdf_entry:
                 pdf_entry.processed = True
-                # Store RFMS job/quote IDs if available in result
+                # Store RFMS job/quote IDs if available in result (column not yet added to model)
                 # pdf_entry.rfms_job_id = result.get("order_id") 
                 db.session.commit()
                 logger.info(f"Updated PDF entry {pdf_id} as processed")

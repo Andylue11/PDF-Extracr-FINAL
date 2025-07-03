@@ -906,6 +906,8 @@ def extract_data_from_pdf(pdf_path: str, builder_name: str = "") -> Dict[str, An
         "email": "",
         "customer_type": "Builders",  # Default as specified in requirements
         "extra_phones": [],  # Store additional phone numbers
+        "pdf_phone3": "",  # For RFMS phone1 mapping (Authorised Contact)
+        "pdf_phone4": "",  # For RFMS phone2 mapping (Site Contact)
         # Purchase Order Information
         "po_number": "",
         "scope_of_work": "",
@@ -1106,6 +1108,46 @@ def clean_extracted_data(extracted_data):
                     filtered_phones.append(phone)
 
         extracted_data["extra_phones"] = filtered_phones
+
+        # For Ambrose PDFs, also try to use alternate contact phones for pdf_phone3 and pdf_phone4
+        # even if they duplicate main phones (different contacts may have same phone)
+        alt_contact_phones = []
+        
+        # Check if this appears to be an Ambrose PDF based on extracted data
+        is_ambrose = (
+            "ambrose" in str(extracted_data.get("raw_text", "")).lower() or
+            any("ambrose" in str(contact.get("type", "")).lower() for contact in extracted_data.get("alternate_contacts", []))
+        )
+        
+        if is_ambrose and extracted_data.get("alternate_contacts"):
+            logger.info("[PHONE_MAPPING] Extracting phones from alternate contacts for Ambrose PDF")
+            for contact in extracted_data.get("alternate_contacts", []):
+                contact_phone = contact.get("phone", "")
+                contact_phone2 = contact.get("phone2", "")
+                contact_name = contact.get("name", "")
+                
+                if contact_phone and contact_phone not in alt_contact_phones:
+                    alt_contact_phones.append(contact_phone)
+                    logger.info(f"[PHONE_MAPPING] Found phone from {contact_name}: {contact_phone}")
+                if contact_phone2 and contact_phone2 not in alt_contact_phones:
+                    alt_contact_phones.append(contact_phone2)
+                    logger.info(f"[PHONE_MAPPING] Found phone2 from {contact_name}: {contact_phone2}")
+        
+        # Use alternate contact phones if available, otherwise use filtered_phones
+        phones_for_mapping = alt_contact_phones if alt_contact_phones else filtered_phones
+        
+        # Map first two phones to pdf_phone3 and pdf_phone4
+        if len(phones_for_mapping) >= 1:
+            extracted_data["pdf_phone3"] = phones_for_mapping[0]  # First alternate contact phone
+        if len(phones_for_mapping) >= 2:
+            extracted_data["pdf_phone4"] = phones_for_mapping[1]  # Second alternate contact phone
+            
+        logger.info(f"[PHONE_MAPPING] Mapped phones - pdf_phone3: {extracted_data.get('pdf_phone3', 'None')}, pdf_phone4: {extracted_data.get('pdf_phone4', 'None')}")
+        logger.info(f"[PHONE_MAPPING] Total phones available for mapping: {len(phones_for_mapping)} (from {'alternate_contacts' if alt_contact_phones else 'filtered_extra_phones'})")
+    else:
+        # Ensure fields are initialized even if no extra_phones
+        extracted_data["pdf_phone3"] = ""
+        extracted_data["pdf_phone4"] = ""
 
     # Clean up alternate_contacts: remove entries with invalid names or no phone/email, and strip newlines
     cleaned_contacts = []
@@ -1452,8 +1494,89 @@ def parse_extracted_text(text, extracted_data, template):
             contact_text = best_contact_section.group(1)
             logger.info(f"[AMBROSE] Found BEST CONTACT DETAILS section: {contact_text[:200]}...")
             
-            # Extract all contact types within BEST CONTACT DETAILS
-            # Look for patterns like "Contact Type: Authorised Contact" followed by name/phone/email
+            # Extract contact entries that start with "Contact Type: Name" pattern
+            # Look for patterns like "Decision Maker: Mark Mclenahan" or "Site Contact: Amy Mclenahan"
+            contact_name_patterns = [
+                r"(Decision\s+Maker)[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|Contact\s+Type|$)",
+                r"(Site\s+Contact)[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|Contact\s+Type|$)",
+                r"(Authorised\s+Contact)[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|Contact\s+Type|$)",
+                r"(Best\s+Contact)[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|Contact\s+Type|$)",
+                r"(Occupant\s+Contact)[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|Contact\s+Type|$)",
+            ]
+            
+            for pattern in contact_name_patterns:
+                contact_matches = re.finditer(pattern, contact_text, re.IGNORECASE)
+                for match in contact_matches:
+                    contact_type = match.group(1).strip()
+                    name = match.group(2).strip()
+                    
+                    # Get context after this contact entry (next 300 characters for more details)
+                    start_pos = match.end()
+                    context = contact_text[start_pos:start_pos + 300]
+                    
+                    # Extract phone numbers from the context (handle line breaks better)
+                    # Remove line breaks for cleaner matching
+                    clean_context = re.sub(r'\n\r?', ' ', context)
+                    
+                    # Look for Mobile: pattern specifically 
+                    mobile_matches = re.findall(r"Mobile[:\s]*([0-9\s\-\(\)]+)", clean_context, re.IGNORECASE)
+                    
+                    # Also look for Phone: pattern
+                    phone_matches = re.findall(r"Phone[:\s]*([0-9\s\-\(\)]+)", clean_context, re.IGNORECASE)
+                    
+                    # Look for standalone phone patterns (10 digits)
+                    standalone_phone_matches = re.findall(r"([0-9]{10})", clean_context)
+                    
+                    # Combine all phone matches
+                    all_phone_matches = mobile_matches + phone_matches + standalone_phone_matches
+                    
+                    # Clean phone numbers
+                    cleaned_phones = []
+                    for phone_raw in all_phone_matches:
+                        cleaned = re.sub(r'[^\d]', '', phone_raw)
+                        if len(cleaned) >= 8 and len(cleaned) <= 12:  # Valid Australian phone length
+                            cleaned_phones.append(cleaned)
+                    
+                    phone = cleaned_phones[0] if cleaned_phones else ""
+                    phone2 = cleaned_phones[1] if len(cleaned_phones) > 1 else ""
+                    
+                    # Extract email
+                    email_match = re.search(r"Email[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", context, re.IGNORECASE)
+                    email = email_match.group(1) if email_match else ""
+                    
+                    # Add to contacts if we have meaningful data
+                    if name and name.lower() != main_customer_name and len(name.strip()) > 2:
+                        contact_entry = {
+                            "type": contact_type,
+                            "name": name,
+                            "phone": phone,
+                            "phone2": phone2,
+                            "email": email
+                        }
+                        extracted_data["alternate_contacts"].append(contact_entry)
+                        logger.info(f"[AMBROSE] Added {contact_type}: {name}, Phone: {phone}, Email: {email}")
+                        
+                        # Prioritize Authorised Contact and Site Contact for Phone3/Phone4
+                        if contact_type.lower() in ["authorised contact", "site contact"]:
+                            if phone and phone not in phone_numbers:
+                                phone_numbers.insert(0, phone)  # Insert at beginning for priority
+                            if phone2 and phone2 not in phone_numbers:
+                                phone_numbers.insert(len(phone_numbers) if phone else 1, phone2)
+                        else:
+                            # Add other phones at the end
+                            if phone and phone not in phone_numbers:
+                                phone_numbers.append(phone)
+                            if phone2 and phone2 not in phone_numbers:
+                                phone_numbers.append(phone2)
+                        
+                        # Set as primary alternate contact if it's a priority type
+                        if (contact_type.lower() in ["decision maker", "authorised contact", "site contact"] and 
+                            not extracted_data.get("alternate_contact_name") and name):
+                            extracted_data["alternate_contact_name"] = name
+                            extracted_data["alternate_contact_phone"] = phone
+                            extracted_data["alternate_contact_email"] = email
+            
+            # Also handle old-style "Contact Type: Type" patterns for backwards compatibility
             contact_type_matches = re.finditer(
                 r"Contact\s+Type[:\s]*([A-Za-z\s]+?)(?=\n|$)",
                 contact_text,
@@ -1470,10 +1593,30 @@ def parse_extracted_text(text, extracted_data, template):
                 name_match = re.search(r"^\s*([A-Za-z\s\-'\.]+?)(?=\n|Mobile|Phone|Email|$)", context, re.MULTILINE)
                 name = name_match.group(1).strip() if name_match else ""
                 
-                # Extract phone numbers
-                phone_matches = re.findall(r"(?:Mobile|Phone|Home)[:\s]*([0-9\s\-\(\)]+)", context, re.IGNORECASE)
-                phone = phone_matches[0] if phone_matches else ""
-                phone2 = phone_matches[1] if len(phone_matches) > 1 else ""
+                # Extract phone numbers (more comprehensive patterns, handle line breaks)
+                # Remove line breaks from context for better matching
+                clean_context = re.sub(r'\n\r?', ' ', context)
+                phone_matches = re.findall(r"(?:Mobile|Phone|Home)[:\s]*([0-9\s\-\(\)]+)", clean_context, re.IGNORECASE)
+                # Also look for standalone phone patterns in the context  
+                standalone_phone_matches = re.findall(r"([0-9]{4}[0-9\s\-\(\)]{6,})", clean_context)
+                
+                # Special pattern for mobile numbers that might be split across lines
+                mobile_split_matches = re.findall(r"Mobile[:\s]*([0-9]{4})[\s\n\r]*([0-9]{3})[\s\n\r]*([0-9]{3})", context, re.IGNORECASE)
+                if mobile_split_matches:
+                    for match in mobile_split_matches:
+                        combined_mobile = ''.join(match)
+                        standalone_phone_matches.append(combined_mobile)
+                
+                # Combine and clean phone numbers
+                all_phone_matches = phone_matches + standalone_phone_matches
+                cleaned_phones = []
+                for phone_raw in all_phone_matches:
+                    cleaned = re.sub(r'[^\d]', '', phone_raw)
+                    if len(cleaned) >= 8 and len(cleaned) <= 12:  # Valid Australian phone length
+                        cleaned_phones.append(cleaned)
+                
+                phone = cleaned_phones[0] if cleaned_phones else ""
+                phone2 = cleaned_phones[1] if len(cleaned_phones) > 1 else ""
                 
                 # Extract email
                 email_match = re.search(r"Email[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", context, re.IGNORECASE)
@@ -1517,6 +1660,8 @@ def parse_extracted_text(text, extracted_data, template):
                 ("Mobile Number", r"Mobile\s+Number[:\s]*([0-9\s\-\(\)]+)"),
                 ("Site Contact", r"Site\s+Contact[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|Contact\s+Type|$)"),
                 ("Authorised Contact", r"Authorised\s+Contact[:\s]*([A-Za-z\s\-'\.]+?)(?=\n|$)"),
+                ("Mobile", r"Mobile[:\s]*([0-9\s\-\(\)]+)"),  # Generic mobile pattern
+                ("Phone", r"Phone[:\s]*([0-9\s\-\(\)]+)"),    # Generic phone pattern
             ]
             
             for pattern_type, pattern in standalone_patterns:
@@ -1643,22 +1788,27 @@ def parse_extracted_text(text, extracted_data, template):
                         search_end = min(len(text), name_index + len(contact_name) + 150)
                         search_window = text[search_start:search_end]
                         
-                        # Look for phone patterns in this window
+                        # Look for phone patterns in this window (comprehensive patterns)
                         phone_patterns = [
                             r"Mobile[:\s]*([0-9\s\-\(\)]{8,})",
                             r"Phone[:\s]*([0-9\s\-\(\)]{8,})",
+                            r"([0-9]{4}[0-9\s\-\(\)]{6,})",  # Any number starting with 4 digits
                             r"([0-9]{2}[)\s\-]*[0-9]{4}[)\s\-]*[0-9]{4})",  # AU phone pattern
                             r"(\([0-9]{2}\)[)\s\-]*[0-9]{4}[)\s\-]*[0-9]{4})",  # (area) number
-                            r"([0-9]{4}[)\s\-]*[0-9]{3}[)\s\-]*[0-9]{3})"  # 10 digit pattern
+                            r"([0-9]{4}[)\s\-]*[0-9]{3}[)\s\-]*[0-9]{3})",  # 10 digit pattern
+                            # Pattern for Australian mobile numbers starting with 04
+                            r"(0[45][0-9\s\-\(\)]{8,})",
+                            # Pattern for numbers that appear after contact names (line break tolerant)
+                            rf"{re.escape(contact_name)}.*?([0-9]{{4,}}[0-9\s\-\(\)]{{4,}})"
                         ]
                         
                         for pattern in phone_patterns:
-                            phone_match = re.search(pattern, search_window, re.IGNORECASE)
+                            phone_match = re.search(pattern, search_window, re.IGNORECASE | re.DOTALL)
                             if phone_match:
                                 phone = phone_match.group(1)
                                 # Clean the phone number
                                 clean_phone = re.sub(r'[^\d]', '', phone)
-                                if len(clean_phone) >= 8:
+                                if len(clean_phone) >= 8 and len(clean_phone) <= 12:
                                     contact["phone"] = clean_phone
                                     if clean_phone not in phone_numbers:
                                         phone_numbers.append(clean_phone)
@@ -1671,26 +1821,29 @@ def parse_extracted_text(text, extracted_data, template):
         
         # Extract basic contact fields like the older version (email, mobile, home, work, phone)
         # This ensures we populate the main contact fields that the UI expects
+        # ONLY set main customer fields from Decision Maker, NOT from other alternate contacts
+        decision_maker_contact = None
         if extracted_data["alternate_contacts"]:
-            # Get the primary contact (Decision Maker or first contact)
-            primary_contact = None
             for contact in extracted_data["alternate_contacts"]:
                 if contact.get("type", "").lower() == "decision maker":
-                    primary_contact = contact
+                    decision_maker_contact = contact
                     break
-            if not primary_contact:
-                primary_contact = extracted_data["alternate_contacts"][0]
             
-            # Set main contact fields from primary contact
-            if primary_contact:
-                if primary_contact.get("email") and not extracted_data.get("email"):
-                    extracted_data["email"] = primary_contact["email"]
-                if primary_contact.get("phone"):
-                    # Set mobile as the primary phone
-                    extracted_data["mobile"] = primary_contact["phone"]
-                    extracted_data["phone"] = primary_contact["phone"]
-                if primary_contact.get("phone2"):
-                    extracted_data["phone2"] = primary_contact["phone2"]
+            # ONLY set main contact fields from Decision Maker (NOT other alternate contacts)
+            if decision_maker_contact:
+                if decision_maker_contact.get("email") and not extracted_data.get("email"):
+                    extracted_data["email"] = decision_maker_contact["email"]
+                    logger.info(f"[AMBROSE] Set main email from Decision Maker: {extracted_data['email']}")
+                if decision_maker_contact.get("phone") and not extracted_data.get("phone"):
+                    # Set mobile as the primary phone for main customer
+                    extracted_data["mobile"] = decision_maker_contact["phone"]
+                    extracted_data["phone"] = decision_maker_contact["phone"]
+                    logger.info(f"[AMBROSE] Set main phone from Decision Maker: {extracted_data['phone']}")
+                if decision_maker_contact.get("phone2") and not extracted_data.get("phone2"):
+                    extracted_data["phone2"] = decision_maker_contact["phone2"]
+                    logger.info(f"[AMBROSE] Set phone2 from Decision Maker: {extracted_data['phone2']}")
+            else:
+                logger.info("[AMBROSE] No Decision Maker found - keeping existing main customer phone fields separate from alternate contacts")
         
         # Extract additional phone types from BEST CONTACT DETAILS section
         if best_contact_section:
@@ -1734,13 +1887,11 @@ def parse_extracted_text(text, extracted_data, template):
             if phone_numbers:
                 extracted_data["extra_phones"] = phone_numbers[:4]  # First 4 phones for compatibility
                 
-                # Set phone fields for compatibility with older system
-                if len(phone_numbers) > 0 and not extracted_data.get("phone"):
-                    extracted_data["phone"] = phone_numbers[0]
-                if len(phone_numbers) > 0 and not extracted_data.get("mobile"):
-                    extracted_data["mobile"] = phone_numbers[0]
-                if len(phone_numbers) > 1 and not extracted_data.get("phone2"):
-                    extracted_data["phone2"] = phone_numbers[1]
+                # DON'T override main customer phone fields with alternate contact phones
+                # The phone_numbers list contains alternate contact phones (like Amy's)
+                # Main customer phone fields should only come from Decision Maker or direct extraction
+                logger.info(f"[AMBROSE] Not overriding main customer phone fields with alternate contact phones: {phone_numbers[:2]}")
+                logger.info(f"[AMBROSE] Current main phone fields - phone: {extracted_data.get('phone', 'None')}, mobile: {extracted_data.get('mobile', 'None')}")
         
         # If we still don't have basic contact fields, use the older simple patterns as fallback
         if not extracted_data.get("email") or not extracted_data.get("phone") or not extracted_data.get("mobile"):

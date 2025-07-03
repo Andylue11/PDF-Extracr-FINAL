@@ -621,9 +621,12 @@ function setupPdfUpload() {
                     }
                 }
                 
-                // Handle best contacts if available - populate the alternate contact name field
-                if (extractedData.alternate_contacts && extractedData.alternate_contacts.length > 0) {
-                    // Find the best contact using priority
+                // Handle BEST CONTACT field - use the consolidated summary from backend
+                if (extractedData.best_contact_summary) {
+                    setValue('alternate-contact-name', extractedData.best_contact_summary);
+                    console.log('[DEBUG] Set best contact summary:', extractedData.best_contact_summary);
+                } else if (extractedData.alternate_contacts && extractedData.alternate_contacts.length > 0) {
+                    // Fallback to individual contact if no summary available
                     let bestContact = null;
                     const priorities = ['Decision Maker', 'Best Contact', 'Site Contact', 'Authorised Contact', 'Occupant Contact'];
                     for (const type of priorities) {
@@ -636,14 +639,27 @@ function setupPdfUpload() {
                     
                     if (bestContact) {
                         setValue('alternate-contact-name', bestContact.name || '');
+                        console.log('[DEBUG] Set best contact name from fallback:', bestContact.name);
                     }
                 }
                 
-                // Handle Phone 3 and Phone 4 from extra_phones (Authorised Contact and Site Contact)
-                if (extractedData.extra_phones && extractedData.extra_phones.length > 0) {
+                // Handle Phone 3 and Phone 4 from the backend-mapped fields
+                if (extractedData.phone3) {
+                    setValue('alternate-contact-phone', extractedData.phone3);  // Phone 3
+                    console.log('[DEBUG] Set Phone 3 from phone3:', extractedData.phone3);
+                }
+                if (extractedData.phone4) {
+                    setValue('alternate-contact-phone2', extractedData.phone4);  // Phone 4
+                    console.log('[DEBUG] Set Phone 4 from phone4:', extractedData.phone4);
+                }
+                
+                // Fallback: Handle Phone 3 and Phone 4 from extra_phones if the above fields are not available
+                if (!extractedData.phone3 && !extractedData.phone4 && extractedData.extra_phones && extractedData.extra_phones.length > 0) {
                     setValue('alternate-contact-phone', extractedData.extra_phones[0] || '');  // Phone 3
+                    console.log('[DEBUG] Set Phone 3 from extra_phones fallback:', extractedData.extra_phones[0]);
                     if (extractedData.extra_phones.length > 1) {
                         setValue('alternate-contact-phone2', extractedData.extra_phones[1] || '');  // Phone 4
+                        console.log('[DEBUG] Set Phone 4 from extra_phones fallback:', extractedData.extra_phones[1]);
                     }
                 }
             }
@@ -1111,7 +1127,10 @@ function setupAddCustomerAndCreateJob() {
             zip_code: document.getElementById('sold-to-zip')?.value || '',
             country: document.getElementById('sold-to-country')?.value || 'Australia',
             phone: document.getElementById('sold-to-phone')?.value || '',
-            email: document.getElementById('sold-to-email')?.value || ''
+            email: document.getElementById('sold-to-email')?.value || '',
+            // Include alternate contact phones (Phone 3 & 4) for RFMS payload prioritization
+            phone3: document.getElementById('alternate-contact-phone')?.value || '',  // Phone 3 from UI
+            phone4: document.getElementById('alternate-contact-phone2')?.value || '' // Phone 4 from UI
         };
         const shipTo = {
             name: shipToName,

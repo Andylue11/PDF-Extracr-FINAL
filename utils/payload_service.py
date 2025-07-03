@@ -49,6 +49,14 @@ def build_rfms_customer_payload(data):
     """
     if data is None:
         raise PayloadError("No data provided for customer creation")
+    
+    # Debug logging to see what phone data we're receiving and prioritization
+    manual_phone3 = data.get('phone3', '')
+    manual_phone4 = data.get('phone4', '')
+    manual_phone = data.get('phone', '')
+    manual_phone2 = data.get('phone2', '')
+    print(f"[DEBUG] Customer payload data received: phone='{manual_phone}', phone2='{manual_phone2}', phone3='{manual_phone3}', phone4='{manual_phone4}'")
+    print(f"[DEBUG] Customer phone prioritization - phone1 will be: '{manual_phone3 or manual_phone}', phone2 will be: '{manual_phone4 or manual_phone2}'")
 
     # Required fields validation - check multiple possible locations for first/last names
     first_name = (
@@ -84,32 +92,42 @@ def build_rfms_customer_payload(data):
         "customerAddress": {
             "lastName": last_name,
             "firstName": first_name,
-            "address1": data.get("address1", ""),
-            "address2": data.get("address2", ""),
-            "city": data.get("city", ""),
-            "state": data.get("state", ""),
-            "postalCode": data.get("zip_code", ""),
+            # Prioritize manual UI data over any PDF extracted data
+            "address1": data.get("address1", "") or data.get("ship_to_address1", ""),  # Manual first, PDF fallback
+            "address2": data.get("address2", "") or data.get("ship_to_address2", ""),  # Manual first, PDF fallback
+            "city": data.get("city", "") or data.get("ship_to_city", ""),  # Manual first, PDF fallback
+            "state": data.get("state", "") or data.get("ship_to_state", "") or "QLD",  # Manual first, PDF fallback, default QLD
+            "postalCode": data.get("zip_code", "") or data.get("ship_to_zip", ""),  # Manual first, PDF fallback
             "county": ""  # Optional field from API docs
         },
         "shipToAddress": {
             "lastName": last_name,
             "firstName": first_name,
-            "address1": data.get("address1", ""),
-            "address2": data.get("address2", ""),
-            "city": data.get("city", ""),
-            "state": data.get("state", ""),
-            "postalCode": data.get("zip_code", ""),
+            # Prioritize manual UI data over any PDF extracted data
+            "address1": data.get("address1", "") or data.get("ship_to_address1", ""),  # Manual first, PDF fallback
+            "address2": data.get("address2", "") or data.get("ship_to_address2", ""),  # Manual first, PDF fallback
+            "city": data.get("city", "") or data.get("ship_to_city", ""),  # Manual first, PDF fallback
+            "state": data.get("state", "") or data.get("ship_to_state", "") or "QLD",  # Manual first, PDF fallback, default QLD
+            "postalCode": data.get("zip_code", "") or data.get("ship_to_zip", ""),  # Manual first, PDF fallback
             "county": ""  # Optional field from API docs
         },
-        "phone1": data.get("phone", ""),
-        "phone2": data.get("phone2", ""),
-        "email": data.get("email", ""),
+        "phone1": data.get("phone3", "") or data.get("phone", "") or data.get("pdf_phone3", "") or data.get("pdf_phone1", ""),  # Prioritize manual phone3, then phone, then PDF data
+        "phone2": data.get("phone4", "") or data.get("phone2", "") or data.get("pdf_phone4", "") or data.get("pdf_phone2", ""),  # Prioritize manual phone4, then phone2, then PDF data
+        "customerPhone3": data.get("phone3", ""),  # Support RFMS customerPhone3 field directly
+        "customerPhone4": data.get("phone4", ""),  # Support RFMS customerPhone4 field directly 
+        "email": data.get("email", "") or data.get("pdf_email", ""),  # Prioritize manual email, fallback to PDF email
         "taxStatus": "Tax",  # From API docs
         "taxMethod": "SalesTax",  # From API docs
         "preferredSalesperson1": "ZORAN VEKIC",
         "preferredSalesperson2": "",
         "storeNumber": "49"
     }
+    
+    # Debug logging to show final values being sent to RFMS
+    final_phone1 = payload["phone1"]
+    final_phone2 = payload["phone2"]
+    print(f"[DEBUG] Customer creation final values - phone1: '{final_phone1}', phone2: '{final_phone2}', customerPhone3: '{payload['customerPhone3']}', customerPhone4: '{payload['customerPhone4']}'")
+    
     return payload
 
 def build_rfms_order_payload(export_data, logger=None):
@@ -190,16 +208,16 @@ def build_rfms_order_payload(export_data, logger=None):
     # Build comprehensive contact list for work order notes
     all_contacts_text = ", ".join([f"{c.get('type', '')}: {c.get('name', '')} {c.get('phone', '')}" for c in alt_contacts_list if c.get('name')])
 
-    # Determine soldTo name fields based on business_name availability
-    business_name = sold_to_data.get("business_name", "").strip()
-    if business_name:
-        # Use business name as lastName, empty firstName for business customers
-        sold_to_first_name = ""
-        sold_to_last_name = business_name
-    else:
-        # Fall back to individual first/last names for personal customers
-        sold_to_first_name = _get_first_name(sold_to_data)
-        sold_to_last_name = _get_last_name(sold_to_data)
+    # Note: soldTo name fields not needed when customer ID is provided - RFMS has all customer details
+
+    # Debug logging to track data source prioritization
+    if logger:
+        manual_phone3 = sold_to_data.get('phone3', '')
+        manual_phone4 = sold_to_data.get('phone4', '')
+        pdf_phone3 = ship_to_data.get('pdf_phone3', '')
+        pdf_phone4 = ship_to_data.get('pdf_phone4', '')
+        logger.info(f"[ORDER_PAYLOAD] Phone prioritization - Manual: phone3='{manual_phone3}', phone4='{manual_phone4}' | PDF: pdf_phone3='{pdf_phone3}', pdf_phone4='{pdf_phone4}'")
+        logger.info(f"[ORDER_PAYLOAD] Final phones - phone1='{sold_to_data.get('phone3') or sold_to_data.get('phone') or ship_to_data.get('pdf_phone3') or ship_to_data.get('pdf_phone1', '')}', phone2='{sold_to_data.get('phone4') or sold_to_data.get('phone2') or ship_to_data.get('pdf_phone4') or ship_to_data.get('pdf_phone2', '')}'")
 
     # Build the RFMS payload using the proven AZ002874 method
     order_payload = {
@@ -212,29 +230,24 @@ def build_rfms_order_payload(export_data, logger=None):
         "soldTo": {
             "customerType": "BUILDERS",  # FIXED HARDCODED
             "customerId": sold_to_customer_id,  # CUSTOMERID DATA VERIFIED IN UI SOLDTO DATA SUBMITTED
-            "firstName": sold_to_first_name,  # Business name logic: empty for business, individual name for personal
-            "lastName": sold_to_last_name,   # Business name logic: business name for business, last name for personal
-            "address1": sold_to_data.get("address1", ""),  # DATA VERIFIED IN UI SOLDTO DATA SUBMITTED
-            "address2": sold_to_data.get("address2", ""),  # DATA VERIFIED IN UI SOLDTO DATA SUBMITTED
-            "city": sold_to_data.get("city", ""),  # DATA VERIFIED IN UI SOLDTO DATA SUBMITTED
-            "state": sold_to_data.get("state") or "QLD",  # Default to QLD if not provided
-            "postalCode": sold_to_data.get("zip_code", ""),  # DATA VERIFIED IN UI SOLDTO DATA SUBMITTED
-            "phone1": ship_to_data.get("pdf_phone3") or sold_to_data.get("phone") or ship_to_data.get("pdf_phone1", ""),  # Use Phone3 first (Authorised Contact), then soldTo phone, then PDF phone
-            "phone2": ship_to_data.get("pdf_phone4") or ship_to_data.get("pdf_phone2", ""),  # Use Phone4 first (Site Contact), then PDF phone2
-            "email": sold_to_data.get("email") or ship_to_data.get("email") or "accounts@atozflooringsolutions.com.au"  # Use soldTo email first
+            # When customer ID is provided, RFMS has all customer details - only need phone numbers for contact
+            "phone1": sold_to_data.get("phone3") or sold_to_data.get("phone") or ship_to_data.get("pdf_phone3") or ship_to_data.get("pdf_phone1", ""),  # Prioritize manual phone3, then phone, then PDF data
+            "phone2": sold_to_data.get("phone4") or sold_to_data.get("phone2") or ship_to_data.get("pdf_phone4") or ship_to_data.get("pdf_phone2", "")  # Prioritize manual phone4, then phone2, then PDF data
         },
         "shipTo": {
-            "firstName": _get_first_name({"name": extracted_customer_name}, default_first="Site") if extracted_customer_name else _get_first_name(ship_to_data, default_first="Site"),  # Use extracted customer name from "Insured Owner" field
-            "lastName": _get_last_name({"name": extracted_customer_name}, default_last="Customer") if extracted_customer_name else _get_last_name(ship_to_data, default_last="Customer"),   # Use extracted customer name from "Insured Owner" field
-            "address1": ship_to_data.get("address1") or ship_to_data.get("ship_to_address1", ""),  # Enhanced: Use ship_to_address1 as fallback from PDF
-            "address2": ship_to_data.get("address2") or ship_to_data.get("ship_to_address2", ""),  # Enhanced: Use ship_to_address2 as fallback from PDF
-            "city": ship_to_data.get("city") or ship_to_data.get("ship_to_city", ""),  # Enhanced: Use ship_to_city as fallback from PDF
-            "state": ship_to_data.get("state") or ship_to_data.get("ship_to_state") or "QLD",  # Enhanced: Use ship_to_state as fallback, default to QLD
-            "postalCode": ship_to_data.get("zip_code") or ship_to_data.get("ship_to_zip", "")  # Enhanced: Use ship_to_zip as fallback from PDF
+            # Prioritize manual UI data for names, fallback to PDF extraction
+            "firstName": _get_first_name(ship_to_data, default_first="Site") if ship_to_data.get("first_name") or ship_to_data.get("name") else (_get_first_name({"name": extracted_customer_name}, default_first="Site") if extracted_customer_name else "Site"),
+            "lastName": _get_last_name(ship_to_data, default_last="Customer") if ship_to_data.get("last_name") or ship_to_data.get("name") else (_get_last_name({"name": extracted_customer_name}, default_last="Customer") if extracted_customer_name else "Customer"),
+            # Prioritize manual UI address data over PDF extracted data
+            "address1": ship_to_data.get("address1") or ship_to_data.get("ship_to_address1", ""),  # Manual first, PDF fallback
+            "address2": ship_to_data.get("address2") or ship_to_data.get("ship_to_address2", ""),  # Manual first, PDF fallback
+            "city": ship_to_data.get("city") or ship_to_data.get("ship_to_city", ""),  # Manual first, PDF fallback
+            "state": ship_to_data.get("state") or ship_to_data.get("ship_to_state") or "QLD",  # Manual first, PDF fallback, default QLD
+            "postalCode": ship_to_data.get("zip_code") or ship_to_data.get("ship_to_zip", "")  # Manual first, PDF fallback
         },
-        "privateNotes": f"PO VALUE: ${job_details_data.get('dollar_value', 0)}\nSITE CONTACT: {extracted_customer_name or ship_to_data.get('first_name', '') + ' ' + ship_to_data.get('last_name', '')}\nALTERNATE CONTACT: {alt_contact.get('name', '')}\nOTHER CONTACTS: {', '.join([c.get('name', '') for c in alt_contacts_list])}\nPHONE1: {ship_to_data.get('pdf_phone3', '')}\nPHONE2: {ship_to_data.get('pdf_phone4', '')}",  # FROM PDF EXTRACTED DATA VERIFIED IN UI SHIPTO DATA SUBMITTED
+        "privateNotes": f"PO VALUE: ${job_details_data.get('dollar_value', 0)}\nSITE CONTACT: {extracted_customer_name or ship_to_data.get('first_name', '') + ' ' + ship_to_data.get('last_name', '')}\nALTERNATE CONTACT: {alt_contact.get('name', '')}\nOTHER CONTACTS: {', '.join([c.get('name', '') for c in alt_contacts_list])}\nPHONE1: {sold_to_data.get('phone3') or sold_to_data.get('phone') or ship_to_data.get('pdf_phone3', '')}\nPHONE2: {sold_to_data.get('phone4') or sold_to_data.get('phone2') or ship_to_data.get('pdf_phone4', '')}",  # Prioritize manual UI data over PDF extracted data
         "publicNotes": f"JOB DESCRIPTION: {job_details_data.get('description_of_works', '')}\nWORKS REQUIRED: {job_details_data.get('works_required', '')}\nSCOPE OF WORKS: {job_details_data.get('scope_of_works', '')}",  # FROM PDF EXTRACTED DATA VERIFIED IN UI SHIPTO DATA SUBMITTED
-        "workOrderNotes": f"SITE CONTACT: {extracted_customer_name or ship_to_data.get('first_name', '') + ' ' + ship_to_data.get('last_name', '')}\nALTERNATE CONTACT: {alt_contact.get('name', '')}\nPHONE1: {ship_to_data.get('pdf_phone3', '')}\nPHONE2: {ship_to_data.get('pdf_phone4', '')}\nALL CONTACTS: {all_contacts_text}",  # FROM PDF EXTRACTED DATA VERIFIED IN UI SHIPTO DATA SUBMITTED
+        "workOrderNotes": f"SITE CONTACT: {extracted_customer_name or ship_to_data.get('first_name', '') + ' ' + ship_to_data.get('last_name', '')}\nALTERNATE CONTACT: {alt_contact.get('name', '')}\nPHONE1: {sold_to_data.get('phone3') or sold_to_data.get('phone') or ship_to_data.get('pdf_phone3', '')}\nPHONE2: {sold_to_data.get('phone4') or sold_to_data.get('phone2') or ship_to_data.get('pdf_phone4', '')}\nALL CONTACTS: {all_contacts_text}",  # Prioritize manual UI data over PDF extracted data
         "measureDate": None,  # Set to null as required by RFMS
         "estimatedDeliveryDate": "2025-06-11",  # Use a fixed date to avoid field issues
         "priceLevel": "3",  # FIXED HARDCODED
@@ -253,6 +266,52 @@ def build_rfms_order_payload(export_data, logger=None):
             }
         ]
     }
+    
+    # Add billing group data if applicable
+    billing_group_data = export_data.get("billing_group", {})
+    if billing_group_data and billing_group_data.get("is_billing_group"):
+        # Build contact list from alternate contacts (up to 4)
+        contact_list = []
+        
+        # Add primary contact (best contact)
+        if alt_contact and alt_contact.get("name"):
+            contact_entry = {
+                "name": alt_contact.get("name", ""),
+                "phone": alt_contact.get("phone", ""),
+                "email": alt_contact.get("email", "")
+            }
+            if alt_contact.get("phone2"):
+                contact_entry["other"] = alt_contact.get("phone2")
+            contact_list.append(contact_entry)
+        
+        # Add alternate contacts (up to 3 more for total of 4)
+        for contact in alt_contacts_list[:3]:  # Limit to 3 more
+            if contact.get("name"):
+                contact_entry = {
+                    "name": contact.get("name", ""),
+                    "phone": contact.get("phone", ""),
+                    "email": contact.get("email", "")
+                }
+                if contact.get("phone2"):
+                    contact_entry["other"] = contact.get("phone2")
+                contact_list.append(contact_entry)
+        
+        # Create ship-to address description
+        ship_to_address = f"{ship_to_data.get('address1', '')} {ship_to_data.get('address2', '')}".strip()
+        if ship_to_data.get('city'):
+            ship_to_address += f", {ship_to_data.get('city')}"
+        if ship_to_data.get('state'):
+            ship_to_address += f", {ship_to_data.get('state')}"
+        if ship_to_data.get('zip_code'):
+            ship_to_address += f" {ship_to_data.get('zip_code')}"
+        
+        order_payload["billingGroup"] = {
+            "description": ship_to_address or f"Project - {po_number}",
+            "contactList": contact_list[:4]  # Ensure max 4 contacts
+        }
+        
+        if logger:
+            logger.info(f"[BILLING_GROUP] Added billing group data with {len(contact_list)} contacts")
     
     if logger:
         logger.info(f"Constructed RFMS Order Payload: {json.dumps(order_payload, indent=2)}")
@@ -294,19 +353,39 @@ def export_data_to_rfms(api_client, export_data, logger):
         }
 
         # Handle billing group if applicable
-        if export_data.get("billing_group") and export_data.get("second_job_details"):
-            second_job_details = export_data["second_job_details"]
-            
-            # Create second order payload
+        billing_group_data = export_data.get("billing_group", {})
+        if billing_group_data and billing_group_data.get("is_billing_group"):
+            # Create second order payload with PO suffix
             second_order_payload = order_payload.copy()
-            second_order_payload["poNumber"] = second_job_details.get("po_number", f"PDF2-{datetime.now().strftime('%Y%m%d%H%M%S')}")
             
-            # Update notes and job number for second job
-            second_order_payload["publicNotes"] = second_job_details.get("description_of_works", "").strip()
-            second_supervisor_name = second_job_details.get("supervisor_name", order_payload["jobNumber"].split()[0])
-            second_supervisor_phone = second_job_details.get("supervisor_phone", "") or second_job_details.get("supervisor_mobile", "")
-            second_job_number = f"{second_supervisor_name} {second_supervisor_phone}".strip() or second_job_details.get("po_number", "")
-            second_order_payload["jobNumber"] = second_job_number
+            # Build second PO number with suffix - remove existing suffix first
+            original_po = order_payload["poNumber"]
+            po_suffix = billing_group_data.get("po_suffix", "")
+            
+            # Remove existing suffix if present (everything after the last dash)
+            if '-' in original_po:
+                base_po = '-'.join(original_po.split('-')[:-1])  # Remove last part after dash
+            else:
+                base_po = original_po
+            
+            second_po_number = f"{base_po}-{po_suffix}" if po_suffix else f"{base_po}-2"
+            second_order_payload["poNumber"] = second_po_number
+            
+            # Update private notes to include dollar value from manual entry
+            second_dollar_value = billing_group_data.get("dollar_value", 0)
+            second_order_payload["privateNotes"] = f"PO VALUE: ${second_dollar_value}\n{order_payload['privateNotes']}"
+            
+            # Update the product quantity to use the second order's dollar value
+            second_order_payload["products"][0]["quantity"] = second_dollar_value
+            
+            # Remove the billingGroup data from second order and add parentOrder reference
+            if "billingGroup" in second_order_payload:
+                del second_order_payload["billingGroup"]
+            
+            # Add billing group reference to parent order
+            second_order_payload["billingGroup"] = {
+                "parentOrder": job_id
+            }
             
             logger.info(f"Creating second job in RFMS (billing group): {second_order_payload['poNumber']}")
             second_job_result = api_client.create_job(second_order_payload)
@@ -317,12 +396,10 @@ def export_data_to_rfms(api_client, export_data, logger):
             
             logger.info(f"Second job created in RFMS with ID: {second_job_id}")
             
-            # Add to billing group
-            billing_group_result = api_client.add_to_billing_group([job_id, second_job_id])
             final_result["second_job"] = second_job_result
             final_result["second_order_id"] = second_job_id
-            final_result["billing_group"] = billing_group_result
-            final_result["message"] = "Successfully exported main job, second job, and created billing group."
+            final_result["billing_group"] = {"parentOrder": job_id, "childOrder": second_job_id}
+            final_result["message"] = "Successfully exported main job and second job with billing group reference."
         
         return final_result 
 
