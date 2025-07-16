@@ -24,7 +24,7 @@ PyPDF2==3.0.1
 python-dateutil==2.8.2
 
 # Email Utilities (if needed)
-smtplib2==0.2.1
+# smtplib is part of Python standard library - no need to install
 
 # Development and Testing
 pytest==7.4.2

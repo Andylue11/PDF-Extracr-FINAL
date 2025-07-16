@@ -1119,19 +1119,41 @@ def clean_extracted_data(extracted_data):
             any("ambrose" in str(contact.get("type", "")).lower() for contact in extracted_data.get("alternate_contacts", []))
         )
         
-        if is_ambrose and extracted_data.get("alternate_contacts"):
-            logger.info("[PHONE_MAPPING] Extracting phones from alternate contacts for Ambrose PDF")
-            for contact in extracted_data.get("alternate_contacts", []):
-                contact_phone = contact.get("phone", "")
-                contact_phone2 = contact.get("phone2", "")
-                contact_name = contact.get("name", "")
-                
-                if contact_phone and contact_phone not in alt_contact_phones:
-                    alt_contact_phones.append(contact_phone)
-                    logger.info(f"[PHONE_MAPPING] Found phone from {contact_name}: {contact_phone}")
-                if contact_phone2 and contact_phone2 not in alt_contact_phones:
-                    alt_contact_phones.append(contact_phone2)
-                    logger.info(f"[PHONE_MAPPING] Found phone2 from {contact_name}: {contact_phone2}")
+        if is_ambrose:
+            logger.info("[PHONE_MAPPING] Extracting phones from alternate contacts and main fields for Ambrose PDF")
+            
+            # First, add main contact phone fields (home, work, mobile) to ensure they're included
+            main_phones = [
+                ("home_phone", extracted_data.get("home_phone", "")),
+                ("work_phone", extracted_data.get("work_phone", "")),
+                ("mobile", extracted_data.get("mobile", "")),
+                ("phone", extracted_data.get("phone", ""))
+            ]
+            
+            for phone_type, phone_value in main_phones:
+                if phone_value and phone_value.strip():
+                    clean_phone = re.sub(r'[^\d]', '', phone_value)
+                    if len(clean_phone) >= 8 and clean_phone not in alt_contact_phones:
+                        alt_contact_phones.append(clean_phone)
+                        logger.info(f"[PHONE_MAPPING] Found {phone_type} from main contact: {clean_phone}")
+            
+            # Then add phones from alternate contacts
+            if extracted_data.get("alternate_contacts"):
+                for contact in extracted_data.get("alternate_contacts", []):
+                    contact_phone = contact.get("phone", "")
+                    contact_phone2 = contact.get("phone2", "")
+                    contact_name = contact.get("name", "")
+                    
+                    if contact_phone:
+                        clean_phone = re.sub(r'[^\d]', '', contact_phone)
+                        if len(clean_phone) >= 8 and clean_phone not in alt_contact_phones:
+                            alt_contact_phones.append(clean_phone)
+                            logger.info(f"[PHONE_MAPPING] Found phone from {contact_name}: {clean_phone}")
+                    if contact_phone2:
+                        clean_phone2 = re.sub(r'[^\d]', '', contact_phone2)
+                        if len(clean_phone2) >= 8 and clean_phone2 not in alt_contact_phones:
+                            alt_contact_phones.append(clean_phone2)
+                            logger.info(f"[PHONE_MAPPING] Found phone2 from {contact_name}: {clean_phone2}")
         
         # Use alternate contact phones if available, otherwise use filtered_phones
         phones_for_mapping = alt_contact_phones if alt_contact_phones else filtered_phones
