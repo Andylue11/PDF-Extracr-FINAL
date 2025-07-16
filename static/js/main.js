@@ -1011,8 +1011,11 @@ function setupAddCustomerAndCreateJob() {
             state: document.getElementById('ship-to-state')?.value || '',
             zip_code: document.getElementById('ship-to-zip').value || '',
             county: document.getElementById('ship-to-county')?.value || '',
-            phone: document.getElementById('pdf-phone1').value || '',  // Use PDF Phone 1
-            phone2: document.getElementById('pdf-phone2').value || '', // Use PDF Phone 2
+            // Priority: User-editable Phone 3 & 4 fields first, then Ship To phones, then PDF fallbacks
+            phone3: document.getElementById('alternate-contact-phone')?.value || '',  // User-editable Phone 3 (maps to RFMS phone1)
+            phone4: document.getElementById('alternate-contact-phone2')?.value || '', // User-editable Phone 4 (maps to RFMS phone2)
+            phone: document.getElementById('ship-to-phone1')?.value || '',  // Ship To Phone 1 (fallback)
+            phone2: document.getElementById('ship-to-phone2')?.value || '', // Ship To Phone 2 (fallback)
             email: document.getElementById('ship-to-email').value || '',
             customer_type: 'INSURANCE',
             business_name: document.getElementById('ship-to-business-name')?.value || ''
