@@ -82,8 +82,28 @@ def build_rfms_customer_payload(data):
                 first_name = ""
                 last_name = customer_name
     
-    if not first_name or not last_name:
-        raise PayloadError("Customer first name and last name are required.")
+    # If still no names, provide sensible defaults for RFMS
+    if not first_name and not last_name:
+        # Use supervisor name as fallback if available
+        supervisor_name = data.get("supervisor_name", "")
+        if supervisor_name:
+            name_parts = supervisor_name.split()
+            if len(name_parts) >= 2:
+                first_name = name_parts[0]
+                last_name = " ".join(name_parts[1:])
+            else:
+                first_name = supervisor_name
+                last_name = "Customer"
+        else:
+            # Last resort - use descriptive defaults
+            first_name = "Site"
+            last_name = "Customer"
+    elif not first_name:
+        first_name = "Site"
+    elif not last_name:
+        last_name = "Customer"
+
+    print(f"[DEBUG] Final customer names - first_name: '{first_name}', last_name: '{last_name}'")
 
     # Build customer-specific payload matching RFMS API documentation exactly
     payload = {
@@ -255,11 +275,24 @@ def build_rfms_order_payload(export_data, logger=None):
         "serviceTypeId": "8",  # FIXED HARDCODED
         "contractTypeId": "1",  # FIXED HARDCODED
         "adSourceId": "1",  # FIXED HARDCODED
-        "lines": [],  # Empty lines array as shown in working orders
+        "lines": [
+            {
+                "productId": "1265",  # PURCHASE ORDER VALUE EX GST product ID
+                "productCode": "38",  # Product code from RFMS API response
+                "styleName": "PURCHASE ORDER VALUE EX GST",  # Product name
+                "styleNumber": "PO$VALUE",  # Style number from RFMS
+                "colorId": "3072",  # Color ID for PO$$VALUE
+                "colorName": "PO$$VALUE",  # Color name from RFMS
+                "colorNumber": "$$XGST",  # Color number from RFMS
+                "quantity": job_details_data.get("dollar_value", 1),  # Use dollar value as quantity
+                "priceLevel": "Price10",  # Price level as requested
+                "lineGroupId": "4"  # Required field from working orders
+            }
+        ],
         "products": [
             {
-                "productId": "213322",  # FIXED HARDCODED
-                "colorId": "2133",  # FIXED HARDCODED
+                "productId": "1265",  # FIXED HARDCODED
+                "colorId": "3072",  # FIXED HARDCODED
                 "quantity": job_details_data.get("dollar_value", 1),  # FROM PDF EXTRACTED DATA VERIFIED IN UI SOLDTO DATA SUBMITTED
                 "priceLevel": "10",  # FIXED HARDCODED - use "10" not "Price10"
                 "lineGroupId": "4"  # FIXED HARDCODED - required field from working orders
